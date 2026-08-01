@@ -9,6 +9,34 @@ fare_delta:
 cabin_class:
   allow_downgrade: false
 
+# Minimum Connection Time (MCT) thresholds in minutes.
+connection:
+  mct_domestic_min: 45          # domestic hub minimum connection
+  mct_international_min: 90     # international hub minimum connection
+  buffer_warning_min: 15        # warn if buffer < MCT + this margin
+
+# Arrival delay tolerance — how late is acceptable for the rebooked flight?
+arrival_delay:
+  acceptable_delay_max_min: 120   # ≤2 hr delay vs original: auto-approve
+  escalate_delay_max_min: 360     # ≤6 hr delay: ask member
+  # >6 hr → blocked, human agent handoff
+
+# Hotel rebooking rules (for overnight disruptions)
+hotel:
+  max_nightly_rate_usd: 250       # auto-approve hotel under this rate
+  allowed_tiers:
+    - "3-star"
+    - "4-star"
+    - "5-star"
+
+# Benefits auto-filing thresholds
+benefits:
+  trip_delay_auto_file_after_hours: 3     # auto-file claim after 3+ hr delay
+  lounge_auto_issue_after_hours: 2        # issue lounge voucher after 2+ hr wait
+  meal_comp_auto_approve_usd: 50          # auto-approve meal comp under $50
+  hotel_comp_auto_approve_usd: 250        # auto-approve hotel comp under $250
+  attestation_required_above_usd: 500     # require member attestation above this
+
 # Mirrors the mandate you'll configure in the Prava dashboard/playground.
 # Keep these two in sync -- policy.yaml is OUR gate, the Prava mandate is
 # the CARD NETWORK's independent gate. Two enforcement points, not one.
@@ -16,3 +44,12 @@ mandate:
   merchant_category: "airlines,hotels"
   max_amount_usd: 75
   expires_days: 365
+
+# Scoring weights for the Reasoning Agent (sum to 1.0)
+scoring:
+  weight_price: 0.30
+  weight_cabin_class: 0.20
+  weight_arrival_delay: 0.20
+  weight_stops: 0.10
+  weight_departure_time: 0.10
+  weight_loyalty_bonus: 0.10

@@ -31,10 +31,10 @@ below to begin a real Prava Sandbox payment session.
    time — self-service signup is decommissioned, and it's not what's being
    judged. The mock candidate list is enough for a believable demo.
 
-3. **Wire up FastAPI** (`app/main.py` — not yet created) as a thin wrapper
-   around the same agent objects used in `demo/run_demo.py`, so you have a
-   live-looking dashboard/endpoint if you want one. Not required for the
-   demo to work.
+3. **Use the FastAPI dashboard** (`app/main.py`) as a thin wrapper around the
+   same agent objects used in `demo/run_demo.py`. It exposes health checks,
+   synthetic auto/escalate/blocked proposals, and a server-side Prava session
+   handoff without exposing payment credentials to the browser.
 
 4. **Comms Agent (WhatsApp)** — reuse your existing Twilio + FastAPI webhook
    code from your task-reminder project instead of writing this from
@@ -89,6 +89,12 @@ Each generated proposal also runs the mock Benefits and Comms agents: eligible
 trip-delay claims are policy-gated and submitted, then a dashboard notification
 is queued. This makes the five-agent orchestration demoable even if the
 external payment passkey is temporarily unavailable.
+
+The local `audit_log.jsonl` is append-only and hash-chained for the MVP. The
+writer uses a cross-process lock so concurrent agent workers cannot fork the
+chain. Existing logs created before that lock was added may report `INVALID`
+if they contain a historical concurrent-write fork; start with a fresh log for
+a clean demo run.
 
 For the real hosted passkey test, expose the local dashboard through HTTPS and
 set that public callback in `.env` before creating a session. With ngrok:
