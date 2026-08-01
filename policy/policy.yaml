@@ -1,0 +1,18 @@
+# Policy thresholds the Orchestrator checks every proposal against.
+# This file IS the "trust boundary" — judges can read it directly.
+
+fare_delta:
+  auto_approve_under_usd: 50   # in-policy: auto-execute, notify member after
+  escalate_under_usd: 150      # out-of-policy but reviewable: ask member
+  # anything above escalate_under_usd -> blocked, human agent handoff
+
+cabin_class:
+  allow_downgrade: false
+
+# Mirrors the mandate you'll configure in the Prava dashboard/playground.
+# Keep these two in sync -- policy.yaml is OUR gate, the Prava mandate is
+# the CARD NETWORK's independent gate. Two enforcement points, not one.
+mandate:
+  merchant_category: "airlines,hotels"
+  max_amount_usd: 75
+  expires_days: 365
