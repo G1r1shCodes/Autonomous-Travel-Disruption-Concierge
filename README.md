@@ -13,8 +13,9 @@ pip install -r requirements.txt
 python demo/run_demo.py
 ```
 
-You should see Monitor → Reasoning → Orchestrator → Rebooking (via mocked
-Prava) → audit trail, printed end to end.
+You should see Monitor → Reasoning → Orchestrator → a secure-payment
+handoff requirement → audit trail, printed end to end. Use the dashboard
+below to begin a real Prava Sandbox payment session.
 
 ## What to do next, in priority order
 
@@ -55,6 +56,8 @@ app/audit.py                 <- hash-chained audit log (JSONL for now)
 app/agents/monitor.py        <- detection (mocked)
 app/agents/reasoning.py      <- scoring/candidate selection (mocked)
 app/agents/rebooking.py      <- execution, calls Prava
+app/agents/benefits.py       <- proposes/submits eligible benefit claims (mocked)
+app/agents/comms.py          <- queues the member-facing update (mocked)
 app/integrations/prava_client.py  <- REPLACE THIS with real Prava SDK
 demo/run_demo.py             <- runs the whole pipeline, no keys needed
 ```
@@ -64,3 +67,37 @@ demo/run_demo.py             <- runs the whole pipeline, no keys needed
 Run `python demo/run_demo.py` — it has no external dependencies and will
 always work. Screen-record it as your fallback demo video before you touch
 anything live.
+
+## Prava Sandbox dashboard
+
+Copy `.env.example` to `.env`, add a sandbox `sk_test_...` key as
+`PRAVA_SECRET_KEY` (the older `PRAVA_API_KEY` name is also supported), then
+run:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Open `http://127.0.0.1:8000`. The dashboard generates auto-approved,
+member-review, and blocked policy examples. For eligible proposals it creates
+a real Prava Sandbox `full_checkout` session server-side, opens Prava's secure checkout in a
+new tab, and polls its status without exposing card data, the Visa network
+token, or dynamic CVV to the browser. Airline booking remains mocked until an
+actual booking-merchant integration consumes the one-time credential.
+
+Each generated proposal also runs the mock Benefits and Comms agents: eligible
+trip-delay claims are policy-gated and submitted, then a dashboard notification
+is queued. This makes the five-agent orchestration demoable even if the
+external payment passkey is temporarily unavailable.
+
+For the real hosted passkey test, expose the local dashboard through HTTPS and
+set that public callback in `.env` before creating a session. With ngrok:
+
+```bash
+ngrok http 8000
+```
+
+Copy ngrok's `https://...` forwarding URL into
+`PRAVA_CALLBACK_URL=https://.../prava/callback`, restart Uvicorn, and open the
+same HTTPS ngrok URL in your browser. Never use a local `http://` callback for
+the Prava-hosted passkey test.

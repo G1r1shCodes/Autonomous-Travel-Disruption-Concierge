@@ -1,6 +1,6 @@
 import yaml
 from pathlib import Path
-from app.models import RebookingProposal, PolicyVerdict
+from app.models import BenefitProposal, RebookingProposal, PolicyVerdict
 from app.audit import log_event
 
 POLICY_PATH = Path(__file__).parent.parent / "policy" / "policy.yaml"
@@ -29,6 +29,22 @@ class Orchestrator:
             agent="orchestrator",
             sub_component="policy_gate",
             action="evaluate_proposal",
+            detail=proposal.model_dump(),
+            policy_verdict=verdict.verdict,
+        )
+        return verdict
+
+    def gate_benefit(self, proposal: BenefitProposal) -> PolicyVerdict:
+        """Apply the same central trust boundary to benefit actions."""
+        if proposal.requires_attestation:
+            verdict = PolicyVerdict(verdict="escalate", policy_rule_id="BN-002-member-attestation-required")
+        else:
+            verdict = PolicyVerdict(verdict="auto_approve", policy_rule_id="BN-001-confirmed-disruption-benefit")
+
+        log_event(
+            agent="orchestrator",
+            sub_component="policy_gate",
+            action="evaluate_benefit_proposal",
             detail=proposal.model_dump(),
             policy_verdict=verdict.verdict,
         )

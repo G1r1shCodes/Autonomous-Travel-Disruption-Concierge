@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "prava-pay": {
+      "source": "Prava-Payments/prava-skills",
+      "sourceType": "github",
+      "skillPath": "prava-pay/SKILL.md",
+      "computedHash": "401594fc62e76d1a2c3fa211f776a3a7eb61dc28018a0e66bda98e6724b31b3b"
+    },
+    "prava-sdk-integration": {
+      "source": "Prava-Payments/prava-skills",
+      "sourceType": "github",
+      "skillPath": "prava-sdk-integration/SKILL.md",
+      "computedHash": "1713396613a9f82160ff81783f50a7236039c50d1d6d0eea314e026340fae265"
+    },
+    "prava-shopping": {
+      "source": "Prava-Payments/prava-skills",
+      "sourceType": "github",
+      "skillPath": "prava-shopping/SKILL.md",
+      "computedHash": "c4351b9cd8368c41594c7aeca02eed629020ae27e10075560972ebf758c11cb5"
+    }
+  }
+}

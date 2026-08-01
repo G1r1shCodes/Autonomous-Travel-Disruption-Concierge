@@ -26,3 +26,18 @@ class PaymentResult(BaseModel):
     token: Optional[str] = None
     merchant: str
     amount_usd: float
+
+
+class PravaSession(BaseModel):
+    """The safe subset of a Prava session retained by this application."""
+
+    session_id: str
+    iframe_url: str
+    expires_at: Optional[str] = None
+
+
+class BenefitProposal(BaseModel):
+    disruption_id: str
+    benefit_type: Literal["trip_delay_claim", "lounge_access"]
+    estimated_value_usd: float
+    requires_attestation: bool = False

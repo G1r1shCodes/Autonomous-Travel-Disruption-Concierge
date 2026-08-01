@@ -12,18 +12,10 @@ class RebookingAgent:
             log_event("rebooking_agent", "gate", "blocked_by_policy", proposal.model_dump())
             return {"status": "blocked", "reason": verdict.policy_rule_id}
 
-        payment = self.prava.request_payment_token(
-            merchant=f"airline:{proposal.candidate_flight[:2]}",
-            amount_usd=proposal.fare_delta_usd,
-        )
+        if verdict.verdict == "escalate":
+            log_event("rebooking_agent", "gate", "awaiting_member_approval", proposal.model_dump())
+            return {"status": "awaiting_member_approval", "reason": verdict.policy_rule_id}
 
-        if payment.status == "auto_approved":
-            # Mock Amadeus booking call -- swap for real Flight Create Orders
-            log_event("rebooking_agent", "amadeus", "book_flight",
-                       {"flight": proposal.candidate_flight, "token": payment.token})
-            return {"status": "booked", "flight": proposal.candidate_flight, "token": payment.token}
-
-        if payment.status == "passkey_required":
-            return {"status": "awaiting_member_passkey_approval", "flight": proposal.candidate_flight}
-
-        return {"status": "payment_failed"}
+        # The browser dashboard starts the real Prava passkey flow. We retain
+        # this method only for the command-line scaffold.
+        return {"status": "requires_prava_dashboard", "flight": proposal.candidate_flight}
