@@ -17,6 +17,10 @@ You should see Monitor → Reasoning → Orchestrator → a secure-payment
 handoff requirement → audit trail, printed end to end. Use the dashboard
 below to begin a real Prava Sandbox payment session.
 
+The demo runs on any platform with no extra setup — it reconfigures its own
+output to UTF-8, so the banner and emoji render correctly even in Windows
+consoles (no `PYTHONIOENCODING` or other encoding workarounds needed).
+
 ## What to do next, in priority order
 
 1. **Swap `app/integrations/prava_client.py` for the real Prava SDK.**
@@ -64,8 +68,9 @@ demo/run_demo.py             <- runs the whole pipeline, no keys needed
 
 ## If something breaks 1 hour before the deadline
 
-Run `python demo/run_demo.py` — it has no external dependencies and will
-always work. Screen-record it as your fallback demo video before you touch
+Run `python demo/run_demo.py` — it has no external dependencies, needs no API
+keys, and will always work on any OS (Windows included, no encoding flags
+required). Screen-record it as your fallback demo video before you touch
 anything live.
 
 ## Prava Sandbox dashboard
@@ -90,11 +95,12 @@ trip-delay claims are policy-gated and submitted, then a dashboard notification
 is queued. This makes the five-agent orchestration demoable even if the
 external payment passkey is temporarily unavailable.
 
-The local `audit_log.jsonl` is append-only and hash-chained for the MVP. The
-writer uses a cross-process lock so concurrent agent workers cannot fork the
-chain. Existing logs created before that lock was added may report `INVALID`
-if they contain a historical concurrent-write fork; start with a fresh log for
-a clean demo run.
+The local `data/audit_log.jsonl` is append-only and hash-chained for the MVP.
+The writer uses a cross-process lock so concurrent agent workers cannot fork
+the chain. Existing logs created before that lock was added may report
+`INVALID` if they contain a historical concurrent-write fork; delete
+`data/audit_log.jsonl` (and its `.lock`) to start with a fresh log for a clean
+demo run.
 
 For the real hosted passkey test, expose the local dashboard through HTTPS and
 set that public callback in `.env` before creating a session. With ngrok:

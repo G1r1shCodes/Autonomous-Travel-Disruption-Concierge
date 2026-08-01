@@ -10,8 +10,18 @@ Exercises the full enhanced 5-agent pipeline:
 - Multi-channel comms with WhatsApp/SMS message previews
 - Hash-chained audit trail with per-agent attribution
 """
-import sys, os, json
+import os
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+# Windows consoles default to cp1252, which cannot encode the box-drawing
+# and emoji characters used below. Force UTF-8 output so the demo runs
+# anywhere without needing PYTHONIOENCODING.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass  # Not a TextIOWrapper (e.g. in some test runners) — leave as-is.
 
 from app.agents.monitor import MonitorAgent
 from app.agents.reasoning import ReasoningAgent
@@ -20,7 +30,7 @@ from app.agents.benefits import BenefitsAgent
 from app.agents.comms import CommsAgent
 from app.models import MemberProfile
 from app.orchestrator import Orchestrator
-from app.audit import verify_chain
+from app.audit import AUDIT_LOG, verify_chain
 
 SCENARIOS = [
     ("PNR-DEMO-001", "Flight Cancellation (JFK→ORD)"),
@@ -143,9 +153,11 @@ if __name__ == "__main__":
     valid = verify_chain()
     print(f"   Hash chain     : {'✅ VALID — tamper-evident, append-only' if valid else '❌ INVALID — chain broken!'}")
 
-    log_path = os.path.join(os.path.dirname(__file__), "..", "audit_log.jsonl")
+    # Reuse the audit module's real path (data/audit_log.jsonl) instead of
+    # guessing a root-level log that never exists.
+    log_path = AUDIT_LOG
     try:
-        with open(log_path) as f:
+        with open(log_path, encoding="utf-8") as f:
             count = sum(1 for _ in f)
         print(f"   Total entries  : {count}")
     except OSError:

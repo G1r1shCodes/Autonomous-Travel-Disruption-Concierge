@@ -2,59 +2,125 @@
 <html class="dark" lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <title>SkyAgent Concierge — Command Center</title>
 <meta name="description" content="Autonomous 5-agent AI crew that detects travel disruptions and rebooks flights using Visa Intelligent Commerce.">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-  body { background-color:#131315; color:#e4e2e4; overflow-x:hidden; }
-  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
-  .agent-glow-monitor { border-left:4px solid #3B82F6; }
-  .agent-glow-reasoning { border-left:4px solid #d2bbff; }
-  .agent-glow-orchestrator { border-left:4px solid #bec6e0; }
-  .agent-glow-rebooking { border-left:4px solid #10B981; }
-  .agent-glow-benefits { border-left:4px solid #F59E0B; }
-  .agent-glow-comms { border-left:4px solid #ec4899; }
-  .custom-scrollbar::-webkit-scrollbar { width:4px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background:transparent; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background:#334155; border-radius:10px; }
-  .view { display:none; } .view.active { display:block; }
-  @keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  .slide-in { animation:slideIn 0.3s ease; }
-  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  .shimmer { background:linear-gradient(90deg,transparent 25%,rgba(255,255,255,0.03) 50%,transparent 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
+  :root{
+    --bg:#131315; --panel:#1f1f21; --panel-2:#2a2a2b; --panel-3:#1b1b1d;
+    --border:#334155; --ink:#e4e2e4; --muted:#b8b8c0; --faint:#8f8f98;
+    --accent:#d2bbff; --accent-ink:#3f008e;
+    --blue:#3B82F6; --emerald:#10B981; --amber:#F59E0B; --pink:#ec4899; --red:#EF4444; --slate:#bec6e0;
+  }
+  html{-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--bg);color:var(--ink);}
+  body{overflow-x:hidden;}
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;}
+  .material-symbols-outlined.filled{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;}
+
+  /* ── Components ─────────────────────────────────────────────── */
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:.75rem;}
+  .panel-high{background:var(--panel-2);border:1px solid var(--border);border-radius:.75rem;}
+  .panel-low{background:var(--panel-3);border:1px solid var(--border);border-radius:.75rem;}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.625rem 1rem;min-height:2.75rem;
+    border-radius:.5rem;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.05em;
+    text-transform:uppercase;font-weight:600;cursor:pointer;transition:background .2s ease,border-color .2s ease,color .2s ease,opacity .2s ease;white-space:nowrap;}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .btn:disabled{opacity:.35;cursor:not-allowed;}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover:not(:disabled){background:#c9aeff;}
+  .btn-outline{border:1px solid var(--border);color:var(--muted);background:transparent;}
+  .btn-outline:hover:not(:disabled){border-color:var(--faint);color:var(--ink);}
+  .btn-blue{background:var(--blue);color:#fff;}
+  .btn-blue:hover:not(:disabled){background:#2f6fe0;}
+  .btn-danger{border:1px solid rgba(239,68,68,.55);color:var(--red);background:transparent;}
+  .btn-danger:hover:not(:disabled){background:rgba(239,68,68,.1);}
+
+  .chip{display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .625rem;border-radius:999px;
+    font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border:1px solid transparent;}
+  .chip-ok{background:rgba(16,185,129,.15);color:var(--emerald);border-color:rgba(16,185,129,.35);}
+  .chip-warn{background:rgba(245,158,11,.15);color:var(--amber);border-color:rgba(245,158,11,.35);}
+  .chip-err{background:rgba(239,68,68,.15);color:var(--red);border-color:rgba(239,68,68,.35);}
+  .chip-mute{background:rgba(144,144,151,.12);color:var(--muted);border-color:var(--border);}
+
+  .input{width:100%;padding:.75rem 1rem;background:var(--panel-3);border:1px solid var(--border);border-radius:.5rem;
+    color:var(--ink);font-size:14px;line-height:1.5;transition:border-color .2s ease,box-shadow .2s ease;}
+  .input::placeholder{color:var(--faint);}
+  .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(210,187,255,.18);}
+
+  .nav-link{display:inline-flex;align-items:center;padding:.375rem .125rem;font-family:'JetBrains Mono',monospace;font-size:12px;
+    letter-spacing:.05em;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color .2s ease,border-color .2s ease;}
+  .nav-link:hover{color:var(--ink);}
+  .nav-link.active{color:var(--accent);border-color:var(--accent);}
+  .nav-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px;}
+
+  .sidebar-link{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-radius:.5rem;cursor:pointer;
+    color:var(--muted);transition:background .15s ease,color .15s ease;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;}
+  .sidebar-link:hover{background:var(--panel-2);color:var(--ink);}
+  .sidebar-link.active{background:rgba(210,187,255,.12);color:var(--accent);}
+  .sidebar-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  .agent-status.selected{outline:2px solid rgba(210,187,255,.5);outline-offset:2px;}
+
+  .view{display:none;}
+  .view.active{display:block;animation:viewIn .25s ease;}
+  @keyframes viewIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Skeleton loaders (opacity pulse — no gradient) */
+  .skeleton{position:relative;overflow:hidden;background:var(--panel-2);border-radius:6px;}
+  .skeleton::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.07);animation:skPulse 1.2s ease-in-out infinite;}
+  @keyframes skPulse{0%,100%{opacity:.25}50%{opacity:.9}}
+
+  /* Mobile sidebar */
+  #sidebar{transform:translateX(-100%);transition:transform .25s ease;}
+  #sidebar.open{transform:translateX(0);}
+  .chip-click{cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease;}
+  .chip-click:hover{background:rgba(210,187,255,.15);border-color:rgba(210,187,255,.4);color:var(--accent);}
+  #sidebar-backdrop{display:none;}
+  #sidebar-backdrop.show{display:block;}
+  @media (min-width:1024px){
+    #sidebar{transform:none;box-shadow:none;}
+    #sidebar-backdrop{display:none !important;}
+  }
+
+  .scenario-row{transition:background .15s ease,border-color .15s ease,transform .1s ease;}
+  .scenario-row:hover{background:var(--panel-2);}
+  .scenario-row:active{transform:translateY(1px);}
+  .scenario-row:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:.5rem;}
+
+  .status-dot{width:8px;height:8px;border-radius:999px;background:var(--faint);}
+  .status-dot.live{background:var(--emerald);animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+    .view.active{animation:none;}
+  }
 </style>
 <script>
 tailwind.config = {
   darkMode:"class",
   theme:{extend:{
     colors:{
-      "surface-bright":"#39393b","status-error":"#EF4444","secondary-fixed-dim":"#d2bbff",
-      "on-secondary":"#3f008e","on-primary":"#283044","tertiary":"#dec29a",
-      "background":"#131315","inverse-on-surface":"#303032","surface-container-low":"#1b1b1d",
-      "monitoring-blue":"#3B82F6","on-error":"#690005","on-secondary-container":"#c9aeff",
-      "slate-border":"#334155","slate-surface":"#1E293B","primary-container":"#0f172a",
-      "inverse-surface":"#e4e2e4","outline-variant":"#45464d","surface-container":"#1f1f21",
-      "on-tertiary":"#3e2d11","primary":"#bec6e0","surface":"#131315","surface-tint":"#bec6e0",
-      "alert-amber":"#F59E0B","execution-emerald":"#10B981","primary-fixed":"#dae2fd",
-      "on-surface":"#e4e2e4","outline":"#909097","on-surface-variant":"#c6c6cd",
-      "secondary":"#d2bbff","error":"#ffb4ab","on-background":"#e4e2e4",
-      "error-container":"#93000a","surface-dim":"#131315","surface-variant":"#353436",
-      "surface-container-highest":"#353436","surface-container-lowest":"#0e0e10",
-      "secondary-container":"#6001d1","on-primary-container":"#798098",
-      "surface-container-high":"#2a2a2b","comms-pink":"#ec4899"
+      "background":"#131315","on-background":"#e4e2e4","on-surface":"#e4e2e4","on-surface-variant":"#b8b8c0",
+      "surface":"#131315","surface-container":"#1f1f21","surface-container-high":"#2a2a2b","surface-container-low":"#1b1b1d","surface-variant":"#353436",
+      "secondary":"#d2bbff","on-secondary":"#3f008e","primary":"#bec6e0","on-primary":"#283044","primary-container":"#0f172a",
+      "monitoring-blue":"#3B82F6","execution-emerald":"#10B981","alert-amber":"#F59E0B","comms-pink":"#ec4899","status-error":"#EF4444",
+      "slate-border":"#334155","slate-surface":"#1E293B","outline":"#909097","outline-variant":"#45464d","error":"#ffb4ab","error-container":"#93000a"
     },
     borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},
     spacing:{"stack-sm":"0.5rem","stack-md":"1rem","stack-lg":"2rem",gutter:"1.5rem","grid-margin":"2rem","container-padding":"1.25rem"},
     fontFamily:{"headline-lg":["Hanken Grotesk"],"body-md":["Inter"],"label-code":["JetBrains Mono"],"body-sm":["Inter"],"headline-xl":["Hanken Grotesk"]},
     fontSize:{
-      "headline-lg":["24px",{lineHeight:"32px",fontWeight:"600"}],
-      "body-md":["16px",{lineHeight:"24px",fontWeight:"400"}],
+      "headline-lg":["20px",{lineHeight:"28px",fontWeight:"600"}],
+      "body-md":["15px",{lineHeight:"22px",fontWeight:"400"}],
       "label-code":["12px",{lineHeight:"16px",letterSpacing:"0.05em",fontWeight:"500"}],
       "body-sm":["14px",{lineHeight:"20px",fontWeight:"400"}],
-      "headline-xl":["40px",{lineHeight:"48px",fontWeight:"700"}]
+      "headline-xl":["28px",{lineHeight:"36px",fontWeight:"700"}]
     }
   }}
 };
@@ -62,59 +128,110 @@ tailwind.config = {
 </head>
 <body class="font-body-md text-body-md bg-background text-on-background">
 
-<!-- ═══ TopNavBar ═══ -->
-<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-16 bg-surface border-b border-slate-border">
-  <div class="flex items-center gap-8">
-    <span class="font-headline-lg text-headline-lg font-bold text-secondary">SkyAgent Concierge</span>
-    <nav class="hidden md:flex gap-6">
-      <a class="nav-link text-on-surface-variant hover:text-primary transition-colors cursor-pointer font-label-code text-label-code" data-view="monitor">Disruptions</a>
-      <a class="nav-link text-on-surface-variant hover:text-primary transition-colors cursor-pointer font-label-code text-label-code" data-view="benefits">Claims</a>
-      <a class="nav-link text-on-surface-variant hover:text-primary transition-colors cursor-pointer font-label-code text-label-code" data-view="audit">Audit Trail</a>
-      <a class="nav-link text-on-surface-variant hover:text-primary transition-colors cursor-pointer font-label-code text-label-code" data-view="comms">Comms</a>
+<!-- ═══ Top Nav Bar ═══ -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-3 sm:px-6 h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] bg-surface border-b border-slate-border">
+  <div class="flex items-center gap-2 sm:gap-6 min-w-0">
+    <button id="menu-btn" aria-label="Toggle navigation" class="lg:hidden w-11 h-11 flex-shrink-0 flex items-center justify-center rounded text-on-surface-variant hover:text-primary hover:bg-surface-variant transition-colors focus-visible:outline-2 focus-visible:outline-secondary">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <span class="font-headline-lg text-headline-lg font-bold text-secondary whitespace-nowrap">SkyAgent<span class="hidden min-[400px]:inline"> Concierge</span></span>
+    <nav aria-label="Primary" class="hidden lg:flex gap-6">
+      <button class="nav-link" data-view="monitor">Disruptions</button>
+      <button class="nav-link" data-view="benefits">Claims</button>
+      <button class="nav-link" data-view="audit">Audit Trail</button>
+      <button class="nav-link" data-view="comms">Comms</button>
     </nav>
   </div>
-  <div class="flex items-center gap-4">
-    <div id="health-badge" class="flex items-center gap-2 px-3 py-1 bg-surface-container border border-slate-border rounded-full">
+  <div class="flex items-center gap-2 md:gap-4">
+    <div id="health-badge" class="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-surface-container border border-slate-border rounded-full" title="Prava sandbox reachability">
       <div id="health-dot" class="w-2 h-2 rounded-full bg-on-surface-variant"></div>
-      <span id="health-text" class="font-label-code text-[10px] text-on-surface-variant">CHECKING…</span>
+      <span id="health-text" class="hidden sm:inline font-label-code text-[10px] text-on-surface-variant">CHECKING…</span>
     </div>
-    <span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">notifications</span>
-    <span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">settings</span>
+    <div class="relative">
+      <button id="notifications-btn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"
+        class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded text-on-surface-variant hover:text-primary hover:bg-surface-variant transition-colors focus-visible:outline-2 focus-visible:outline-secondary">
+        <span class="material-symbols-outlined">notifications</span>
+      </button>
+      <div id="notifications-panel" class="hidden fixed inset-x-3 top-[calc(4.5rem+env(safe-area-inset-top))] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 w-[min(20rem,calc(100vw-2rem))] panel shadow-lg z-50 overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-border flex items-center justify-between bg-surface-container">
+          <span class="font-label-code text-label-code text-on-surface font-semibold">Recent Events</span>
+          <span class="material-symbols-outlined text-sm text-on-surface-variant">history</span>
+        </div>
+        <div id="notifications-list" class="max-h-80 overflow-y-auto divide-y divide-slate-border/60"></div>
+        <button id="notifications-view-all" class="w-full py-3 text-center font-label-code text-[11px] uppercase tracking-wider text-secondary hover:bg-surface-variant transition-colors focus-visible:outline-2 focus-visible:outline-secondary">
+          View Full Audit Trail
+        </button>
+      </div>
+    </div>
+    <div class="relative">
+      <button id="settings-btn" aria-label="Settings" aria-haspopup="true" aria-expanded="false"
+        class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded text-on-surface-variant hover:text-primary hover:bg-surface-variant transition-colors focus-visible:outline-2 focus-visible:outline-secondary">
+        <span class="material-symbols-outlined">settings</span>
+      </button>
+      <div id="settings-panel" class="hidden absolute right-0 top-full mt-2 w-[min(18rem,calc(100vw-2rem))] panel shadow-lg z-50 overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-border bg-surface-container">
+          <span class="font-label-code text-label-code text-on-surface font-semibold">Settings</span>
+        </div>
+        <div class="p-4 space-y-4">
+          <label class="flex items-center justify-between gap-3 cursor-pointer">
+            <span class="text-sm text-on-surface-variant">Auto-refresh activity</span>
+            <input id="auto-refresh" type="checkbox" class="accent-secondary w-4 h-4">
+          </label>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm text-on-surface-variant">Prava sandbox</span>
+            <span id="settings-health" class="chip chip-mute">CHECKING…</span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm text-on-surface-variant">Audit chain</span>
+            <span id="settings-chain" class="chip chip-mute">—</span>
+          </div>
+          <div class="pt-2 border-t border-slate-border space-y-2">
+            <a href="https://dashboard.prava.space/" target="_blank" rel="noopener" class="flex items-center gap-2 text-sm text-secondary hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-secondary">
+              <span class="material-symbols-outlined text-base">open_in_new</span>Prava Dashboard
+            </a>
+            <a href="https://docs.prava.space/" target="_blank" rel="noopener" class="flex items-center gap-2 text-sm text-secondary hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-secondary">
+              <span class="material-symbols-outlined text-base">open_in_new</span>Prava Docs
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
 
-<!-- ═══ SideNavBar ═══ -->
-<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 z-40 flex flex-col bg-surface-container border-r border-slate-border">
-  <div class="p-6">
+<!-- ═══ Side Nav ═══ -->
+<div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-30 lg:hidden"></div>
+<aside id="sidebar" class="fixed left-0 top-[calc(4rem+env(safe-area-inset-top))] h-[calc(100vh-4rem-env(safe-area-inset-top))] w-72 max-w-[85vw] z-40 flex flex-col bg-surface-container border-r border-slate-border">
+  <div class="p-6 pb-4">
     <div class="flex items-center gap-3 mb-1">
-      <div class="w-2 h-2 rounded-full bg-execution-emerald animate-pulse"></div>
+      <span class="status-dot live"></span>
       <span class="font-headline-lg text-headline-lg text-on-surface">Agent Crew</span>
     </div>
     <p class="font-label-code text-label-code text-on-surface-variant">5 Active Instances</p>
   </div>
-  <nav class="flex-1 px-4 space-y-2">
-    <div class="sidebar-link bg-primary-container text-primary border-l-4 border-secondary flex items-center gap-3 px-4 py-3 rounded-r cursor-pointer transition-all" data-view="monitor" data-agent="monitor">
-      <span class="material-symbols-outlined">analytics</span><span class="font-label-code text-label-code">Monitor</span>
-    </div>
-    <div class="sidebar-link text-on-surface-variant hover:bg-surface-variant flex items-center gap-3 px-4 py-3 rounded cursor-pointer transition-all" data-view="monitor" data-agent="reasoning">
-      <span class="material-symbols-outlined">psychology</span><span class="font-label-code text-label-code">Reasoning</span>
-    </div>
-    <div class="sidebar-link text-on-surface-variant hover:bg-surface-variant flex items-center gap-3 px-4 py-3 rounded cursor-pointer transition-all" data-view="monitor" data-agent="orchestrator">
-      <span class="material-symbols-outlined">hub</span><span class="font-label-code text-label-code">Orchestrator</span>
-    </div>
-    <div class="sidebar-link text-on-surface-variant hover:bg-surface-variant flex items-center gap-3 px-4 py-3 rounded cursor-pointer transition-all" data-view="monitor" data-agent="rebooking">
-      <span class="material-symbols-outlined">flight_takeoff</span><span class="font-label-code text-label-code">Rebooking</span>
-    </div>
-    <div class="sidebar-link text-on-surface-variant hover:bg-surface-variant flex items-center gap-3 px-4 py-3 rounded cursor-pointer transition-all" data-view="benefits" data-agent="benefits">
-      <span class="material-symbols-outlined">payments</span><span class="font-label-code text-label-code">Benefits</span>
-    </div>
-    <div class="sidebar-link text-on-surface-variant hover:bg-surface-variant flex items-center gap-3 px-4 py-3 rounded cursor-pointer transition-all" data-view="comms" data-agent="comms">
-      <span class="material-symbols-outlined">forum</span><span class="font-label-code text-label-code">Comms</span>
-    </div>
+  <nav aria-label="Agents" class="flex-1 px-3 space-y-1">
+    <button class="sidebar-link w-full" data-agent="monitor">
+      <span class="material-symbols-outlined text-monitoring-blue">analytics</span><span>Monitor</span>
+    </button>
+    <button class="sidebar-link w-full" data-agent="reasoning">
+      <span class="material-symbols-outlined text-secondary">psychology</span><span>Reasoning</span>
+    </button>
+    <button class="sidebar-link w-full" data-agent="orchestrator">
+      <span class="material-symbols-outlined text-primary">hub</span><span>Orchestrator</span>
+    </button>
+    <button class="sidebar-link w-full" data-agent="rebooking">
+      <span class="material-symbols-outlined text-execution-emerald">flight_takeoff</span><span>Rebooking</span>
+    </button>
+    <button class="sidebar-link w-full" data-agent="benefits">
+      <span class="material-symbols-outlined text-alert-amber">payments</span><span>Benefits</span>
+    </button>
+    <button class="sidebar-link w-full" data-agent="comms">
+      <span class="material-symbols-outlined text-comms-pink">forum</span><span>Comms</span>
+    </button>
   </nav>
-  <div class="p-4 border-t border-slate-border">
-    <button onclick="switchView('audit')" class="w-full py-2 bg-secondary text-on-secondary rounded font-label-code text-[11px] uppercase tracking-wider mb-4 hover:opacity-90 transition-all">View Full Audit Trail</button>
-    <div class="flex items-center justify-between text-on-surface-variant px-2">
+  <div class="p-4 border-t border-slate-border space-y-3">
+    <button id="view-audit-btn" class="btn btn-outline w-full">View Full Audit Trail</button>
+    <div class="flex items-center justify-between text-on-surface-variant px-1">
       <div class="flex items-center gap-2">
         <span class="material-symbols-outlined text-sm">verified_user</span>
         <span id="audit-count" class="font-label-code text-[10px]">0 EVENTS</span>
@@ -124,142 +241,146 @@ tailwind.config = {
   </div>
 </aside>
 
-<!-- ═══ Main Content Canvas ═══ -->
-<main class="pl-64 pt-16 min-h-screen">
-<div class="p-8 max-w-[1600px] mx-auto">
+<!-- ═══ Main ═══ -->
+<main class="pt-[calc(4rem+env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)] lg:pl-72 min-h-screen">
+<div class="p-4 md:p-8 max-w-[1600px] mx-auto">
 
   <!-- Agent Status Bar -->
-  <section class="grid grid-cols-6 gap-4 mb-8" id="agent-bar">
-    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-monitoring-blue transition-all group" data-agent="monitor">
-      <span class="material-symbols-outlined text-monitoring-blue mb-2 text-3xl group-hover:scale-110 transition-transform">analytics</span>
+  <section class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-8" id="agent-bar" aria-label="Agent status">
+    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-monitoring-blue/60 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-secondary" data-agent="monitor" tabindex="0" role="button" aria-label="Monitor agent status">
+      <span class="material-symbols-outlined text-monitoring-blue mb-2 text-3xl">analytics</span>
       <span class="font-label-code text-label-code uppercase tracking-widest text-on-surface-variant">Monitor</span>
       <span class="agent-state text-[10px] text-on-surface-variant mt-1">IDLE</span>
     </div>
-    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-secondary transition-all group" data-agent="reasoning">
-      <span class="material-symbols-outlined text-secondary mb-2 text-3xl group-hover:scale-110 transition-transform">psychology</span>
+    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-secondary/60 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-secondary" data-agent="reasoning" tabindex="0" role="button" aria-label="Reasoning agent status">
+      <span class="material-symbols-outlined text-secondary mb-2 text-3xl">psychology</span>
       <span class="font-label-code text-label-code uppercase tracking-widest text-on-surface-variant">Reasoning</span>
       <span class="agent-state text-[10px] text-on-surface-variant mt-1">IDLE</span>
     </div>
-    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-primary transition-all group" data-agent="orchestrator">
-      <span class="material-symbols-outlined text-primary mb-2 text-3xl group-hover:scale-110 transition-transform">hub</span>
+    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-primary/60 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-secondary" data-agent="orchestrator" tabindex="0" role="button" aria-label="Orchestrator agent status">
+      <span class="material-symbols-outlined text-primary mb-2 text-3xl">hub</span>
       <span class="font-label-code text-label-code uppercase tracking-widest text-on-surface-variant">Orchestrator</span>
       <span class="agent-state text-[10px] text-on-surface-variant mt-1">IDLE</span>
     </div>
-    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-execution-emerald transition-all group" data-agent="rebooking">
-      <span class="material-symbols-outlined text-execution-emerald mb-2 text-3xl group-hover:scale-110 transition-transform">flight_takeoff</span>
+    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-execution-emerald/60 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-secondary" data-agent="rebooking" tabindex="0" role="button" aria-label="Rebooking agent status">
+      <span class="material-symbols-outlined text-execution-emerald mb-2 text-3xl">flight_takeoff</span>
       <span class="font-label-code text-label-code uppercase tracking-widest text-on-surface-variant">Rebooking</span>
       <span class="agent-state text-[10px] text-on-surface-variant mt-1">IDLE</span>
     </div>
-    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-alert-amber transition-all group" data-agent="benefits">
-      <span class="material-symbols-outlined text-alert-amber mb-2 text-3xl group-hover:scale-110 transition-transform">payments</span>
+    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-alert-amber/60 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-secondary" data-agent="benefits" tabindex="0" role="button" aria-label="Benefits agent status">
+      <span class="material-symbols-outlined text-alert-amber mb-2 text-3xl">payments</span>
       <span class="font-label-code text-label-code uppercase tracking-widest text-on-surface-variant">Benefits</span>
       <span class="agent-state text-[10px] text-on-surface-variant mt-1">IDLE</span>
     </div>
-    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-comms-pink transition-all group" data-agent="comms">
-      <span class="material-symbols-outlined text-comms-pink mb-2 text-3xl group-hover:scale-110 transition-transform">forum</span>
+    <div class="agent-status bg-surface-container-high p-4 rounded-xl border border-slate-border flex flex-col items-center justify-center text-center hover:border-comms-pink/60 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-secondary" data-agent="comms" tabindex="0" role="button" aria-label="Comms agent status">
+      <span class="material-symbols-outlined text-comms-pink mb-2 text-3xl">forum</span>
       <span class="font-label-code text-label-code uppercase tracking-widest text-on-surface-variant">Comms</span>
       <span class="agent-state text-[10px] text-on-surface-variant mt-1">IDLE</span>
     </div>
   </section>
 
-  <!-- ═══════════ VIEW: MONITOR (default) ═══════════ -->
+  <!-- ═══════════ VIEW: MONITOR ═══════════ -->
   <div class="view active" id="view-monitor">
-    <div class="grid grid-cols-12 gap-6">
-      <!-- Left: Disruption Monitor -->
-      <section class="col-span-12 lg:col-span-8 space-y-6">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <!-- Left -->
+      <section class="xl:col-span-8 space-y-6">
         <!-- Disruption Scenarios -->
-        <div class="bg-slate-surface border border-slate-border rounded-xl overflow-hidden shadow-2xl">
-          <div class="px-6 py-4 border-b border-slate-border flex justify-between items-center bg-surface-container">
+        <div class="panel overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-border flex justify-between items-center bg-surface-container">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-monitoring-blue">radar</span>
               <h2 class="font-headline-lg text-headline-lg">Disruption Monitor</h2>
             </div>
-            <div class="flex gap-2">
-              <span class="px-3 py-1 bg-surface-container-low border border-slate-border rounded-full text-[10px] text-monitoring-blue font-bold font-label-code">3 SCENARIOS</span>
-            </div>
+            <span class="chip chip-mute">3 SCENARIOS</span>
           </div>
-          <div class="p-6 space-y-4" id="disruption-list">
+          <div class="p-5 space-y-3" id="disruption-list">
             <!-- Scenario 1: Cancellation -->
-            <div class="scenario-row bg-surface-container-low border border-status-error/20 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 hover:bg-surface-container-high transition-colors cursor-pointer" data-scenario="auto">
+            <div class="scenario-row bg-surface-container-low border border-status-error/25 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer" data-scenario="auto" tabindex="0" role="button" aria-label="Run cancellation scenario">
               <div class="flex items-center gap-4 w-full md:w-auto">
-                <div class="bg-status-error/10 p-3 rounded-lg"><span class="material-symbols-outlined text-status-error">warning</span></div>
+                <div class="w-11 h-11 rounded-lg bg-status-error/10 flex items-center justify-center"><span class="material-symbols-outlined text-status-error">flight_takeoff</span></div>
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="font-label-code text-label-code font-bold">AA202</span>
                     <span class="text-xs text-on-surface-variant">JFK → ORD</span>
                   </div>
-                  <p class="text-on-surface-variant text-sm mt-1">Status: <span class="text-status-error font-bold">Cancelled</span></p>
+                  <p class="text-on-surface-variant text-sm mt-0.5">Status: <span class="text-status-error font-bold">Cancelled</span></p>
                 </div>
               </div>
-              <div class="flex items-center gap-6 w-full md:w-auto justify-between">
+              <div class="flex items-center gap-4 md:gap-6 w-full md:w-auto justify-between">
                 <div class="text-right">
                   <p class="text-[10px] text-on-surface-variant uppercase font-label-code">Fare Delta</p>
                   <p class="font-label-code text-label-code text-execution-emerald">$42 · Auto</p>
                 </div>
-                <button class="scenario-btn px-4 py-2 bg-monitoring-blue text-on-primary font-label-code text-[11px] rounded hover:opacity-90 transition-all" data-scenario="auto">RESOLVE</button>
+                <button class="scenario-btn btn btn-blue" data-scenario="auto">Resolve</button>
               </div>
             </div>
             <!-- Scenario 2: Missed Connection -->
-            <div class="scenario-row bg-surface-container-low border border-alert-amber/20 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 hover:bg-surface-container-high transition-colors cursor-pointer" data-scenario="escalate">
+            <div class="scenario-row bg-surface-container-low border border-alert-amber/25 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer" data-scenario="escalate" tabindex="0" role="button" aria-label="Run missed connection scenario">
               <div class="flex items-center gap-4 w-full md:w-auto">
-                <div class="bg-alert-amber/10 p-3 rounded-lg"><span class="material-symbols-outlined text-alert-amber">hourglass_top</span></div>
+                <div class="w-11 h-11 rounded-lg bg-alert-amber/10 flex items-center justify-center"><span class="material-symbols-outlined text-alert-amber">hourglass_top</span></div>
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="font-label-code text-label-code font-bold">UA455</span>
                     <span class="text-xs text-on-surface-variant">SFO → DEN → MIA</span>
                   </div>
-                  <p class="text-on-surface-variant text-sm mt-1">Status: <span class="text-alert-amber font-bold">Missed Connection (+105m)</span></p>
+                  <p class="text-on-surface-variant text-sm mt-0.5">Status: <span class="text-alert-amber font-bold">Missed Connection (+105m)</span></p>
                 </div>
               </div>
-              <div class="flex items-center gap-6 w-full md:w-auto justify-between">
+              <div class="flex items-center gap-4 md:gap-6 w-full md:w-auto justify-between">
                 <div class="text-right">
                   <p class="text-[10px] text-on-surface-variant uppercase font-label-code">Fare Delta</p>
                   <p class="font-label-code text-label-code text-alert-amber">$120 · Escalate</p>
                 </div>
-                <button class="scenario-btn px-4 py-2 bg-alert-amber text-on-primary font-label-code text-[11px] rounded hover:opacity-90 transition-all" data-scenario="escalate">ANALYZE</button>
+                <button class="scenario-btn btn btn-outline" data-scenario="escalate">Analyze</button>
               </div>
             </div>
             <!-- Scenario 3: Severe Delay -->
-            <div class="scenario-row bg-surface-container-low border border-slate-border rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 hover:bg-surface-container-high transition-colors cursor-pointer" data-scenario="blocked">
+            <div class="scenario-row bg-surface-container-low border border-slate-border rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer" data-scenario="blocked" tabindex="0" role="button" aria-label="Run blocked scenario">
               <div class="flex items-center gap-4 w-full md:w-auto">
-                <div class="bg-status-error/10 p-3 rounded-lg"><span class="material-symbols-outlined text-status-error">block</span></div>
+                <div class="w-11 h-11 rounded-lg bg-status-error/10 flex items-center justify-center"><span class="material-symbols-outlined text-status-error">block</span></div>
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="font-label-code text-label-code font-bold">DL1847</span>
                     <span class="text-xs text-on-surface-variant">LAX → ATL</span>
                   </div>
-                  <p class="text-on-surface-variant text-sm mt-1">Status: <span class="text-status-error font-bold">Delayed (+4hrs, $200 delta)</span></p>
+                  <p class="text-on-surface-variant text-sm mt-0.5">Status: <span class="text-status-error font-bold">Delayed (+4hrs, $200 delta)</span></p>
                 </div>
               </div>
-              <div class="flex items-center gap-6 w-full md:w-auto justify-between">
+              <div class="flex items-center gap-4 md:gap-6 w-full md:w-auto justify-between">
                 <div class="text-right">
                   <p class="text-[10px] text-on-surface-variant uppercase font-label-code">Fare Delta</p>
                   <p class="font-label-code text-label-code text-status-error">$200 · Blocked</p>
                 </div>
-                <button class="scenario-btn px-4 py-2 border border-status-error/50 text-status-error font-label-code text-[11px] rounded hover:bg-status-error/10 transition-all" data-scenario="blocked">BLOCKED</button>
+                <button class="scenario-btn btn btn-danger" data-scenario="blocked">Blocked</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Before/After + Policy Verdict (hidden until scenario runs) -->
+        <!-- Results -->
         <div id="result-panel" class="space-y-6" style="display:none">
-          <!-- Before / After Comparison -->
-          <div class="bg-slate-surface border border-slate-border rounded-xl p-6 shadow-xl slide-in">
-            <div class="flex items-center gap-3 mb-6">
+          <!-- Before / After -->
+          <div class="panel p-5 md:p-6">
+            <div class="flex items-center gap-3 mb-5">
               <span class="material-symbols-outlined text-secondary">compare_arrows</span>
               <h2 class="font-headline-lg text-headline-lg">Itinerary Comparison</h2>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-              <div id="before-card" class="bg-surface-container p-5 rounded-lg border-l-4 border-status-error">
-                <p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-label-code mb-2">❌ Original</p>
+              <div id="before-card" class="bg-surface-container p-5 rounded-lg border border-status-error/40">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="material-symbols-outlined text-status-error text-base">cancel</span>
+                  <p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-label-code">Original</p>
+                </div>
                 <p id="before-flight" class="font-headline-lg text-[28px] text-on-surface">—</p>
                 <p id="before-route" class="text-sm text-on-surface-variant mt-1"></p>
                 <p id="before-status" class="text-sm text-status-error font-bold mt-1"></p>
               </div>
               <div class="flex justify-center"><span class="material-symbols-outlined text-secondary text-4xl">arrow_forward</span></div>
-              <div id="after-card" class="bg-surface-container p-5 rounded-lg border-l-4 border-execution-emerald">
-                <p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-label-code mb-2">✅ Rebooked</p>
+              <div id="after-card" class="bg-surface-container p-5 rounded-lg border border-execution-emerald/40">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="material-symbols-outlined text-execution-emerald text-base">check_circle</span>
+                  <p class="text-[10px] text-on-surface-variant uppercase tracking-widest font-label-code">Rebooked</p>
+                </div>
                 <p id="after-flight" class="font-headline-lg text-[28px] text-on-surface">—</p>
                 <p id="after-delta" class="text-sm text-on-surface-variant mt-1"></p>
                 <p id="after-class" class="text-sm text-execution-emerald font-bold mt-1"></p>
@@ -267,44 +388,43 @@ tailwind.config = {
             </div>
           </div>
 
-          <!-- Policy Engine Card -->
-          <div class="bg-slate-surface border border-slate-border rounded-xl p-6 shadow-xl relative overflow-hidden slide-in">
-            <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><span class="material-symbols-outlined text-[120px]">policy</span></div>
-            <div class="flex items-center gap-3 mb-6">
+          <!-- Policy Verdict -->
+          <div class="panel p-5 md:p-6">
+            <div class="flex items-center gap-3 mb-5">
               <span class="material-symbols-outlined text-secondary">security</span>
               <h2 class="font-headline-lg text-headline-lg">Policy Engine Verdict</h2>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="bg-surface-container p-4 rounded-lg border border-slate-border">
-                <p class="text-[10px] text-on-surface-variant uppercase tracking-widest mb-1 font-label-code">Decision</p>
+                <p class="text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 font-label-code">Decision</p>
                 <p id="verdict-text" class="font-headline-lg text-headline-lg">—</p>
               </div>
               <div class="bg-surface-container p-4 rounded-lg border border-slate-border">
-                <p class="text-[10px] text-on-surface-variant uppercase tracking-widest mb-1 font-label-code">Policy Rule</p>
+                <p class="text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 font-label-code">Policy Rule</p>
                 <p id="verdict-rule" class="font-label-code text-label-code text-on-surface mt-2">—</p>
               </div>
               <div class="bg-surface-container p-4 rounded-lg border border-slate-border">
-                <p class="text-[10px] text-on-surface-variant uppercase tracking-widest mb-1 font-label-code">Reasoning</p>
+                <p class="text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 font-label-code">Reasoning</p>
                 <p id="verdict-method" class="font-label-code text-label-code text-on-surface mt-2">—</p>
               </div>
             </div>
           </div>
 
-          <!-- Candidates Table -->
-          <div class="bg-slate-surface border border-slate-border rounded-xl overflow-hidden shadow-xl slide-in">
-            <div class="px-6 py-4 border-b border-slate-border flex justify-between items-center bg-surface-container">
+          <!-- Candidates -->
+          <div class="panel overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-border flex justify-between items-center bg-surface-container">
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-secondary">leaderboard</span>
                 <h2 class="font-headline-lg text-headline-lg">Scored Candidates</h2>
               </div>
-              <span id="candidate-count" class="px-3 py-1 bg-surface-container-low border border-slate-border rounded-full text-[10px] text-secondary font-bold font-label-code">0 OPTIONS</span>
+              <span id="candidate-count" class="chip chip-mute">0 OPTIONS</span>
             </div>
             <div class="overflow-x-auto">
-              <table class="w-full">
+              <table class="w-full text-sm min-w-[640px]">
                 <thead>
                   <tr class="bg-surface-container-low border-b border-slate-border font-label-code text-[11px] text-on-surface-variant uppercase tracking-wider">
-                    <th class="text-left px-6 py-3">Flight</th><th class="text-left px-4 py-3">Airline</th><th class="text-right px-4 py-3">Δ Price</th>
-                    <th class="text-center px-4 py-3">Class</th><th class="text-center px-4 py-3">Stops</th><th class="text-right px-4 py-3">Delay</th><th class="text-right px-6 py-3">Score</th>
+                    <th class="text-left px-4 md:px-6 py-3 font-medium">Flight</th><th class="text-left px-4 py-3 font-medium">Airline</th><th class="text-right px-4 py-3 font-medium">Δ Price</th>
+                    <th class="text-center px-4 py-3 font-medium">Class</th><th class="text-center px-4 py-3 font-medium">Stops</th><th class="text-right px-4 py-3 font-medium">Delay</th><th class="text-right px-4 md:px-6 py-3 font-medium">Score</th>
                   </tr>
                 </thead>
                 <tbody id="candidates-tbody"></tbody>
@@ -312,8 +432,8 @@ tailwind.config = {
             </div>
           </div>
 
-          <!-- Payment Section -->
-          <div class="bg-slate-surface border border-slate-border rounded-xl p-6 shadow-xl slide-in">
+          <!-- Payment -->
+          <div class="panel p-5 md:p-6">
             <div class="flex items-center gap-3 mb-4">
               <span class="material-symbols-outlined text-secondary">credit_card</span>
               <h2 class="font-headline-lg text-headline-lg">Prava Sandbox Payment</h2>
@@ -322,18 +442,30 @@ tailwind.config = {
               <p class="font-label-code text-[11px] text-on-surface-variant uppercase mb-1">Test Card Only</p>
               <p class="font-label-code text-label-code text-on-surface">Visa <span class="text-secondary">4622 9431 2323 2150</span> · Exp <span class="text-secondary">12/27</span> · CVV <span class="text-secondary">093</span> · OTP <span class="text-secondary">456789</span></p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
               <div>
-                <label class="font-label-code text-[11px] text-on-surface-variant uppercase tracking-widest mb-2 block">Member Email</label>
-                <input id="email" type="email" placeholder="traveler@example.com" class="w-full px-4 py-3 bg-surface-container border border-slate-border rounded-lg text-on-surface font-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary/30 outline-none transition-all">
+                <label for="email" class="font-label-code text-[11px] text-on-surface-variant uppercase tracking-widest mb-2 block">Member Email</label>
+                <input id="email" name="email" type="email" placeholder="traveler@example.com" class="input" autocomplete="email">
               </div>
-              <div class="flex flex-col justify-end">
-                <label class="flex items-center gap-2 mb-3 font-label-code text-[11px] text-on-surface-variant cursor-pointer">
-                  <input id="approval" type="checkbox" class="accent-secondary"><span>I approve this escalated proposal</span>
+              <div class="space-y-3">
+                <label for="approval" class="flex items-center gap-2 font-label-code text-[11px] text-on-surface-variant cursor-pointer select-none">
+                  <input id="approval" type="checkbox" class="accent-secondary w-4 h-4"><span>I approve this escalated proposal</span>
                 </label>
-                <button id="pay-btn" disabled class="w-full py-3 bg-secondary text-on-secondary font-label-code text-[11px] uppercase tracking-wider rounded-lg hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-                  Continue to Prava Sandbox →
-                </button>
+                <button id="pay-btn" disabled class="btn btn-primary w-full">Continue to Prava Sandbox</button>
+              </div>
+            </div>
+            <!-- Decision checkpoint (escalated proposals) -->
+            <div id="decision-panel" class="hidden mt-4 p-4 rounded-lg border border-alert-amber/40 bg-alert-amber/5">
+              <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-alert-amber mt-0.5">warning</span>
+                <div class="flex-1">
+                  <p class="font-label-code text-label-code text-on-surface mb-1">Member Decision Required</p>
+                  <p class="text-sm text-on-surface-variant">This rebooking exceeds your standing mandate. Approve to authorize the Prava payment, or decline to route to a human agent.</p>
+                  <div class="flex flex-wrap gap-3 mt-4">
+                    <button id="decision-approve" class="btn btn-primary">Approve</button>
+                    <button id="decision-decline" class="btn btn-danger">Decline</button>
+                  </div>
+                </div>
               </div>
             </div>
             <div id="payment-status" class="mt-4 p-3 bg-surface-container rounded-lg font-label-code text-label-code text-on-surface-variant">Generate an eligible proposal first.</div>
@@ -342,21 +474,23 @@ tailwind.config = {
       </section>
 
       <!-- Right: Activity Feed -->
-      <section class="col-span-12 lg:col-span-4">
-        <div class="bg-slate-surface border border-slate-border rounded-xl h-full flex flex-col shadow-2xl">
-          <div class="px-6 py-4 border-b border-slate-border flex justify-between items-center bg-surface-container">
+      <section class="xl:col-span-4">
+        <div class="panel h-full flex flex-col">
+          <div class="px-5 py-4 border-b border-slate-border flex justify-between items-center bg-surface-container">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-secondary">history</span>
               <h2 class="font-headline-lg text-headline-lg">Recent Activity</h2>
             </div>
+            <button id="activity-filter" class="chip chip-mute chip-click hidden" title="Show all agents" aria-label="Reset activity filter to all agents">ALL</button>
           </div>
-          <div class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-3 max-h-[700px]" id="activity-feed">
-            <div class="text-center text-on-surface-variant font-label-code text-label-code py-8">Run a scenario to see agent activity.</div>
-          </div>
-          <div class="p-4 border-t border-slate-border bg-surface-container/30">
-            <div class="flex items-center gap-2 text-[10px] font-label-code text-on-surface-variant">
-              <div class="w-1.5 h-1.5 bg-execution-emerald rounded-full animate-pulse"></div>STREAMING LIVE LOGS
+          <div class="flex-1 overflow-y-auto p-4 space-y-3 max-h-[720px]" id="activity-feed" aria-live="polite">
+            <div class="text-center text-on-surface-variant font-label-code text-label-code py-10">
+              Run a scenario to see agent activity.
             </div>
+          </div>
+          <div class="px-5 py-3 border-t border-slate-border bg-surface-container/40 flex items-center gap-2">
+            <span class="status-dot live"></span>
+            <span class="font-label-code text-[10px] text-on-surface-variant uppercase tracking-wider">Live activity</span>
           </div>
         </div>
       </section>
@@ -365,38 +499,37 @@ tailwind.config = {
 
   <!-- ═══════════ VIEW: BENEFITS ═══════════ -->
   <div class="view" id="view-benefits">
-    <section class="mb-8 flex justify-between items-end">
+    <section class="mb-6 md:mb-8 flex flex-col md:flex-row justify-between gap-4 md:items-end">
       <div>
-        <h1 class="font-headline-xl text-headline-xl mb-2">Benefits Agent Dashboard</h1>
+        <h1 class="font-headline-xl text-headline-xl mb-2">Benefits Agent</h1>
         <p class="text-on-surface-variant max-w-2xl">Autonomous resolution of travel insurance claims and amenity fulfillment.</p>
       </div>
-      <div class="bg-surface-container p-6 rounded-xl border border-slate-border flex flex-col items-end">
+      <div class="panel p-5 flex flex-col items-start md:items-end">
         <span class="font-label-code text-label-code text-secondary uppercase tracking-widest mb-1">Total Value Recovered</span>
-        <span id="total-benefits-value" class="font-headline-xl text-[48px] text-execution-emerald">$0</span>
+        <span id="total-benefits-value" class="font-headline-xl text-[40px] text-execution-emerald">$0</span>
       </div>
     </section>
-    <div class="grid grid-cols-12 gap-6">
-      <div class="col-span-12 lg:col-span-8 bg-surface-container rounded-xl border border-slate-border overflow-hidden flex flex-col">
-        <div class="p-6 border-b border-slate-border flex justify-between items-center bg-surface-container-high">
-          <h2 class="font-headline-lg text-[20px] flex items-center gap-3"><span class="material-symbols-outlined text-secondary">history_edu</span>Auto-Filed Claims</h2>
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <div class="xl:col-span-8 panel overflow-hidden flex flex-col">
+        <div class="p-5 border-b border-slate-border flex justify-between items-center bg-surface-container">
+          <h2 class="font-headline-lg text-[18px] flex items-center gap-2"><span class="material-symbols-outlined text-secondary">history_edu</span>Auto-Filed Claims</h2>
         </div>
         <div>
-          <div class="grid grid-cols-12 px-6 py-4 bg-surface-container-low border-b border-slate-border font-label-code text-[11px] text-on-surface-variant uppercase tracking-wider">
-            <div class="col-span-4">Benefit Type</div><div class="col-span-3">Policy / Reference</div><div class="col-span-2 text-right">Value</div><div class="col-span-3 text-right">Status</div>
+          <div class="grid grid-cols-12 px-4 md:px-6 py-3 bg-surface-container-low border-b border-slate-border font-label-code text-[11px] text-on-surface-variant uppercase tracking-wider">
+            <div class="col-span-5 sm:col-span-4">Benefit Type</div><div class="hidden sm:block col-span-3">Policy / Reference</div><div class="col-span-3 sm:col-span-2 text-right">Value</div><div class="col-span-4 sm:col-span-3 text-right">Status</div>
           </div>
           <div id="benefits-tbody" class="divide-y divide-slate-border">
-            <div class="px-6 py-8 text-center text-on-surface-variant font-label-code">Run a disruption scenario to see auto-filed claims.</div>
+            <div class="px-4 md:px-6 py-10 text-center text-on-surface-variant font-label-code">Run a disruption scenario to see auto-filed claims.</div>
           </div>
         </div>
       </div>
-      <!-- Agent Log -->
-      <div class="col-span-12 lg:col-span-4">
-        <div class="bg-slate-surface rounded-xl border border-slate-border p-6 agent-glow-benefits shadow-2xl">
-          <div class="flex items-center gap-3 mb-6">
-            <span class="material-symbols-outlined text-alert-amber" style="font-variation-settings:'FILL' 1">payments</span>
+      <div class="xl:col-span-4">
+        <div class="panel p-5">
+          <div class="flex items-center gap-3 mb-5">
+            <span class="material-symbols-outlined filled text-alert-amber">payments</span>
             <span class="font-label-code text-label-code text-alert-amber">BENEFITS_AGENT.LOG</span>
           </div>
-          <div id="benefits-log" class="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+          <div id="benefits-log" class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
             <div class="text-on-surface-variant font-label-code text-[11px]">Awaiting agent activity…</div>
           </div>
         </div>
@@ -404,14 +537,14 @@ tailwind.config = {
     </div>
   </div>
 
-  <!-- ═══════════ VIEW: AUDIT TRAIL ═══════════ -->
+  <!-- ═══════════ VIEW: AUDIT ═══════════ -->
   <div class="view" id="view-audit">
-    <section class="mb-8 flex justify-between items-end">
+    <section class="mb-6 md:mb-8 flex flex-col md:flex-row justify-between gap-4 md:items-end">
       <div>
         <h1 class="font-headline-xl text-headline-xl mb-2">Audit Trail</h1>
         <p class="text-on-surface-variant max-w-2xl">Hash-chained, append-only, tamper-evident event log with per-agent attribution.</p>
       </div>
-      <div class="bg-surface-container p-4 rounded-xl border border-slate-border">
+      <div class="panel p-4">
         <div class="flex items-center gap-3">
           <span class="material-symbols-outlined text-execution-emerald">verified_user</span>
           <div>
@@ -421,47 +554,46 @@ tailwind.config = {
         </div>
       </div>
     </section>
-    <div class="bg-surface-container rounded-xl border border-slate-border overflow-hidden">
-      <div id="audit-entries-list" class="divide-y divide-slate-border max-h-[600px] overflow-y-auto custom-scrollbar">
-        <div class="px-6 py-8 text-center text-on-surface-variant font-label-code">Loading audit entries…</div>
+    <div class="panel overflow-hidden">
+      <div id="audit-entries-list" class="divide-y divide-slate-border max-h-[640px] overflow-y-auto">
+        <div class="px-4 md:px-6 py-10 text-center text-on-surface-variant font-label-code">Loading audit entries…</div>
       </div>
     </div>
   </div>
 
   <!-- ═══════════ VIEW: COMMS ═══════════ -->
   <div class="view" id="view-comms">
-    <section class="mb-8">
+    <section class="mb-6 md:mb-8">
       <h1 class="font-headline-xl text-headline-xl mb-2">Comms Agent — Notifications</h1>
       <p class="text-on-surface-variant max-w-2xl">Multi-channel member notifications with before/after itinerary comparison.</p>
     </section>
-    <div class="grid grid-cols-12 gap-6">
-      <div class="col-span-12 lg:col-span-6">
-        <div class="bg-slate-surface border border-slate-border rounded-xl p-6 shadow-xl">
-          <div class="flex items-center gap-3 mb-4">
-            <span class="material-symbols-outlined text-execution-emerald">chat</span>
-            <h2 class="font-headline-lg text-headline-lg">WhatsApp Preview</h2>
-          </div>
-          <div id="whatsapp-preview" class="bg-[#1a2e1a] border border-execution-emerald/20 rounded-lg p-5 font-label-code text-[12px] leading-relaxed whitespace-pre-line min-h-[200px] text-on-surface">
-            Run a disruption scenario to see the WhatsApp message.
-          </div>
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div class="panel p-5 md:p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined text-execution-emerald">chat</span>
+          <h2 class="font-headline-lg text-headline-lg">WhatsApp Preview</h2>
         </div>
+        <div id="whatsapp-preview" class="bg-[#17251a] border border-execution-emerald/25 rounded-lg p-5 font-label-code text-[12px] leading-relaxed whitespace-pre-line min-h-[220px] text-on-surface">
+          Run a disruption scenario to see the WhatsApp message.
+        </div>
+        <p class="mt-3 text-xs text-on-surface-variant font-label-code">Templates are queued for future Twilio WhatsApp delivery — approve/decline actions render inline for escalated proposals.</p>
       </div>
-      <div class="col-span-12 lg:col-span-6">
-        <div class="bg-slate-surface border border-slate-border rounded-xl p-6 shadow-xl">
+      <div class="space-y-6">
+        <div class="panel p-5 md:p-6">
           <div class="flex items-center gap-3 mb-4">
             <span class="material-symbols-outlined text-monitoring-blue">sms</span>
             <h2 class="font-headline-lg text-headline-lg">SMS Fallback</h2>
           </div>
-          <div id="sms-preview" class="bg-surface-container border border-slate-border rounded-lg p-5 font-label-code text-[12px] leading-relaxed min-h-[100px] text-on-surface">
+          <div id="sms-preview" class="bg-surface-container border border-slate-border rounded-lg p-5 font-label-code text-[12px] leading-relaxed min-h-[120px] text-on-surface">
             Run a disruption scenario to see the SMS message.
           </div>
         </div>
-        <div class="bg-slate-surface border border-slate-border rounded-xl p-6 shadow-xl mt-6">
+        <div class="panel p-5 md:p-6">
           <div class="flex items-center gap-3 mb-4">
             <span class="material-symbols-outlined text-primary">dashboard</span>
             <h2 class="font-headline-lg text-headline-lg">Dashboard Notification</h2>
           </div>
-          <div id="dashboard-preview" class="bg-surface-container border border-slate-border rounded-lg p-5 font-label-code text-[12px] leading-relaxed min-h-[100px] text-on-surface">
+          <div id="dashboard-preview" class="bg-surface-container border border-slate-border rounded-lg p-5 font-label-code text-[12px] leading-relaxed min-h-[120px] text-on-surface">
             Run a disruption scenario to see the dashboard notification.
           </div>
         </div>
@@ -472,60 +604,85 @@ tailwind.config = {
 </div>
 </main>
 
-<!-- FAB -->
-<button onclick="switchView('monitor')" class="fixed bottom-8 right-8 w-14 h-14 bg-secondary text-on-secondary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group z-50">
-  <span class="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">add_moderator</span>
-</button>
-
 <script>
 // ═══ State ═══
-let proposal = null, poller = null;
+let proposal = null, poller = null, activeAgent = null, autoRefreshTimer = null;
+
+const $=id=>document.getElementById(id);
+async function api(url,opts={}){const r=await fetch(url,opts);const b=await r.json();if(!r.ok)throw new Error(b.detail||'Failed');return b;}
 
 const AGENT_COLORS = {
   monitor_agent:'text-monitoring-blue', reasoning_agent:'text-secondary',
   orchestrator:'text-primary', rebooking_agent:'text-execution-emerald',
   benefits_agent:'text-alert-amber', comms_agent:'text-comms-pink'
 };
-const AGENT_GLOWS = {
-  monitor_agent:'agent-glow-monitor', reasoning_agent:'agent-glow-reasoning',
-  orchestrator:'agent-glow-orchestrator', rebooking_agent:'agent-glow-rebooking',
-  benefits_agent:'agent-glow-benefits', comms_agent:'agent-glow-comms'
-};
 const AGENT_BG = {
-  monitor_agent:'bg-monitoring-blue/20', reasoning_agent:'bg-secondary/20',
-  orchestrator:'bg-primary/20', rebooking_agent:'bg-execution-emerald/20',
-  benefits_agent:'bg-alert-amber/20', comms_agent:'bg-comms-pink/20'
+  monitor_agent:'bg-monitoring-blue/15', reasoning_agent:'bg-secondary/15',
+  orchestrator:'bg-primary/15', rebooking_agent:'bg-execution-emerald/15',
+  benefits_agent:'bg-alert-amber/15', comms_agent:'bg-comms-pink/15'
+};
+const AGENT_ICONS = {
+  monitor_agent:'radar', reasoning_agent:'psychology', orchestrator:'hub',
+  rebooking_agent:'flight_takeoff', benefits_agent:'payments', comms_agent:'forum'
 };
 const BENEFIT_ICONS = {trip_delay_claim:'schedule',lounge_access:'chair_alt',meal_comp:'restaurant',hotel_comp:'hotel'};
 const BENEFIT_STATUS_CLASSES = {
-  submitted:'bg-execution-emerald/20 text-execution-emerald border-execution-emerald/40',
-  awaiting_member_approval:'bg-alert-amber/20 text-alert-amber border-alert-amber/40'
+  submitted:'chip chip-ok', awaiting_member_approval:'chip chip-warn', denied:'chip chip-err'
+};
+const VERDICT_CHIP = {
+  auto_approve:'chip chip-ok', auto_approved:'chip chip-ok', escalate:'chip chip-warn', blocked:'chip chip-err'
+};
+const VERDICT_TEXT = {
+  auto_approve:'Auto-Approved', auto_approved:'Auto-Approved', escalate:'Escalated', blocked:'Blocked'
 };
 
-// ═══ Helpers ═══
-const $=id=>document.getElementById(id);
-async function api(url,opts={}){const r=await fetch(url,opts);const b=await r.json();if(!r.ok)throw new Error(b.detail||'Failed');return b;}
+function agentFull(short){return short==='orchestrator'?short:short+'_agent';}
 
-// ═══ View Switching ═══
+// ═══ View switching ═══
 function switchView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const el=$('view-'+name); if(el)el.classList.add('active');
-  // Update sidebar
-  document.querySelectorAll('.sidebar-link').forEach(l=>{
-    if(l.dataset.view===name){l.className='sidebar-link bg-primary-container text-primary border-l-4 border-secondary flex items-center gap-3 px-4 py-3 rounded-r cursor-pointer transition-all';}
-    else{l.className='sidebar-link text-on-surface-variant hover:bg-surface-variant flex items-center gap-3 px-4 py-3 rounded cursor-pointer transition-all';}
-  });
-  // Update nav
-  document.querySelectorAll('.nav-link').forEach(l=>{
-    if(l.dataset.view===name){l.className='nav-link text-secondary border-b-2 border-secondary pb-1 cursor-pointer font-label-code text-label-code transition-all';}
-    else{l.className='nav-link text-on-surface-variant hover:text-primary transition-colors cursor-pointer font-label-code text-label-code';}
-  });
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.toggle('active', l.dataset.view===name));
   if(name==='audit')loadAudit();
+  closeSidebar();
 }
-document.querySelectorAll('.nav-link').forEach(l=>l.addEventListener('click',e=>{e.preventDefault();switchView(l.dataset.view);}));
-document.querySelectorAll('.sidebar-link').forEach(l=>l.addEventListener('click',()=>switchView(l.dataset.view)));
 
-// ═══ Agent Status Bar Animation ═══
+function setSelectionUI(agent){
+  document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active', l.dataset.agent===agent));
+  document.querySelectorAll('.agent-status').forEach(c=>c.classList.toggle('selected', c.dataset.agent===agent));
+  const chip = $('activity-filter');
+  const onMonitor = $('view-monitor').classList.contains('active');
+  if(onMonitor){
+    chip.classList.remove('hidden');
+    chip.textContent = agent ? agent.toUpperCase() : 'ALL';
+  } else {
+    chip.classList.add('hidden');
+  }
+}
+
+function selectAgent(agent){
+  activeAgent = agent;
+  switchView(agent==='benefits'?'benefits':agent==='comms'?'comms':'monitor');
+  setSelectionUI(agent);
+  refreshActivity();
+}
+
+function resetToAll(){
+  activeAgent = null;
+  switchView('monitor');
+  setSelectionUI(null);
+  refreshActivity();
+}
+
+function onNav(name){
+  switchView(name);
+  if(name==='benefits'){activeAgent='benefits';setSelectionUI('benefits');}
+  else if(name==='comms'){activeAgent='comms';setSelectionUI('comms');}
+  else {activeAgent=null;setSelectionUI(null);}
+  refreshActivity();
+}
+
+// ═══ Agent status ═══
 function setAgentState(agent,state,color){
   const el=document.querySelector(`.agent-status[data-agent="${agent}"] .agent-state`);
   if(!el)return;
@@ -533,11 +690,8 @@ function setAgentState(agent,state,color){
   el.className=`agent-state text-[10px] mt-1 ${color}`;
 }
 const AGENT_SEQ=['monitor','reasoning','orchestrator','rebooking','benefits','comms'];
-async function animatePipeline(){
-  for(const a of AGENT_SEQ){setAgentState(a,'PROCESSING…','text-secondary animate-pulse');await new Promise(r=>setTimeout(r,350));setAgentState(a,'DONE','text-execution-emerald');}
-}
 
-// ═══ Render Functions ═══
+// ═══ Render: Compare ═══
 function renderCompare(d,p){
   const seg=d.segments&&d.segments[0];
   $('before-flight').textContent=d.original_flight;
@@ -548,20 +702,21 @@ function renderCompare(d,p){
   $('after-class').textContent=p.cabin_class_same?'Same cabin class':'Cabin downgrade';
 }
 
+// ═══ Render: Candidates ═══
 function renderCandidates(candidates){
   if(!candidates||!candidates.length)return;
   $('candidate-count').textContent=candidates.length+' OPTIONS';
   const best=candidates[0]?.flight;
   $('candidates-tbody').innerHTML=candidates.map(c=>{
     const sel=c.flight===best;
-    return `<tr class="${sel?'bg-secondary/5':''} hover:bg-surface-variant/50 transition-all">
-      <td class="px-6 py-4 font-label-code text-label-code"><span class="font-bold ${sel?'text-secondary':'text-on-surface'}">${c.flight}</span></td>
+    return `<tr class="${sel?'bg-secondary/5':''} hover:bg-surface-variant/50 transition-colors">
+      <td class="px-4 md:px-6 py-4 font-label-code text-label-code"><span class="font-bold ${sel?'text-secondary':'text-on-surface'}">${c.flight}</span></td>
       <td class="px-4 py-4 font-label-code text-label-code text-on-surface-variant">${c.airline||''}</td>
       <td class="px-4 py-4 text-right font-label-code text-label-code">$${c.fare_delta_usd.toFixed(0)}</td>
-      <td class="px-4 py-4 text-center font-label-code text-label-code">${c.cabin_class_same?'<span class="text-execution-emerald">✓</span>':'<span class="text-status-error">↓</span>'}</td>
+      <td class="px-4 py-4 text-center font-label-code text-label-code">${c.cabin_class_same?'<span class="material-symbols-outlined text-[16px] text-execution-emerald">check</span>':'<span class="material-symbols-outlined text-[16px] text-status-error">south</span>'}</td>
       <td class="px-4 py-4 text-center font-label-code text-label-code">${c.stops}</td>
       <td class="px-4 py-4 text-right font-label-code text-label-code text-on-surface-variant">+${c.arrival_delay_vs_original_min}m</td>
-      <td class="px-6 py-4 text-right">
+      <td class="px-4 md:px-6 py-4 text-right">
         <div class="flex items-center justify-end gap-2">
           <div class="w-16 h-1.5 bg-surface-variant rounded-full overflow-hidden"><div class="h-full rounded-full ${sel?'bg-secondary':'bg-monitoring-blue'}" style="width:${Math.round(c.score*100)}%"></div></div>
           <span class="font-label-code text-[11px] text-on-surface w-10 text-right">${c.score.toFixed(3)}</span>
@@ -570,6 +725,7 @@ function renderCandidates(candidates){
     </tr>`}).join('');
 }
 
+// ═══ Render: Verdict ═══
 function renderVerdict(v){
   const colors={auto_approve:'text-execution-emerald',escalate:'text-alert-amber',blocked:'text-status-error'};
   const icons={auto_approve:'check_circle',escalate:'warning',blocked:'block'};
@@ -577,30 +733,46 @@ function renderVerdict(v){
   $('verdict-rule').textContent=v.policy_rule_id;
 }
 
+// ═══ Render: Benefits ═══
+function renderBenefitsLog(benefits){
+  if(!benefits||!benefits.length){$('benefits-log').innerHTML='<div class="text-on-surface-variant font-label-code text-[11px]">Awaiting agent activity…</div>';return;}
+  $('benefits-log').innerHTML=benefits.map(b=>{
+    const p=b.proposal||b;const r=b.result||{};
+    const status=r.status||'submitted';
+    const ok=status==='submitted';
+    return `<div class="flex items-start gap-3">
+      <span class="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${ok?'bg-execution-emerald/15 text-execution-emerald':'bg-alert-amber/15 text-alert-amber'}"><span class="material-symbols-outlined text-[14px]">${ok?'check':'schedule'}</span></span>
+      <div class="min-w-0">
+        <p class="font-label-code text-[11px] text-on-surface">${p.benefit_type.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase())} <span class="text-on-surface-variant">· $${p.estimated_value_usd.toFixed(0)}</span></p>
+        <p class="font-label-code text-[10px] text-on-surface-variant truncate">${p.policy_reference||'—'} → ${status.replace(/_/g,' ')}</p>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderBenefits(benefits){
-  if(!benefits||!benefits.length){$('benefits-tbody').innerHTML='<div class="px-6 py-8 text-center text-on-surface-variant font-label-code">No benefits filed.</div>';return;}
+  if(!benefits||!benefits.length){$('benefits-tbody').innerHTML='<div class="px-4 md:px-6 py-10 text-center text-on-surface-variant font-label-code">No benefits filed.</div>';return;}
   let total=0;
   $('benefits-tbody').innerHTML=benefits.map(b=>{
     const p=b.proposal||b;const r=b.result||{};const icon=BENEFIT_ICONS[p.benefit_type]||'receipt';
-    const status=r.status||'submitted';const cls=BENEFIT_STATUS_CLASSES[status]||BENEFIT_STATUS_CLASSES.submitted;
+    const status=r.status||'submitted';const chipClass=BENEFIT_STATUS_CLASSES[status]||'chip chip-ok';
     total+=p.estimated_value_usd;
-    return `<div class="grid grid-cols-12 px-6 py-5 hover:bg-surface-variant/50 transition-all items-center slide-in">
-      <div class="col-span-4 flex items-center gap-4">
-        <div class="w-10 h-10 rounded bg-slate-surface border border-slate-border flex items-center justify-center text-secondary"><span class="material-symbols-outlined">${icon}</span></div>
-        <div><div class="font-headline-lg text-body-md text-on-surface">${p.benefit_type.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase())}</div>
-        <div class="font-label-code text-[11px] text-on-surface-variant">${p.card_tier} tier · ${p.delay_duration_hours}hr delay</div></div>
+    return `<div class="grid grid-cols-12 px-4 md:px-6 py-5 hover:bg-surface-variant/40 transition-colors items-center">
+      <div class="col-span-5 sm:col-span-4 flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-lg bg-slate-surface border border-slate-border flex items-center justify-center text-secondary flex-shrink-0"><span class="material-symbols-outlined">${icon}</span></div>
+        <div class="min-w-0">
+          <div class="font-headline-lg text-body-md text-on-surface truncate">${p.benefit_type.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase())}</div>
+          <div class="font-label-code text-[11px] text-on-surface-variant truncate">${p.card_tier} tier · ${p.delay_duration_hours}hr delay</div>
+        </div>
       </div>
-      <div class="col-span-3"><div class="font-label-code text-body-sm">${p.policy_reference||'—'}</div></div>
-      <div class="col-span-2 text-right"><div class="font-headline-lg text-body-md text-on-surface">$${p.estimated_value_usd.toFixed(2)}</div></div>
-      <div class="col-span-3 text-right">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${cls} font-label-code text-[11px] border uppercase">
-          <span class="w-1.5 h-1.5 rounded-full bg-current ${status==='submitted'?'animate-pulse':''}"></span>${status.replace(/_/g,' ')}
-        </span>
-      </div>
+      <div class="hidden sm:block col-span-3"><div class="font-label-code text-body-sm">${p.policy_reference||'—'}</div></div>
+      <div class="col-span-3 sm:col-span-2 text-right"><div class="font-headline-lg text-body-md text-on-surface">$${p.estimated_value_usd.toFixed(2)}</div></div>
+      <div class="col-span-4 sm:col-span-3 text-right"><span class="${chipClass}">${status.replace(/_/g,' ')}</span></div>
     </div>`}).join('');
   $('total-benefits-value').textContent='$'+total.toFixed(2);
 }
 
+// ═══ Render: Comms previews ═══
 function renderComms(notification){
   if(!notification?.channels)return;
   const ch=notification.channels;
@@ -609,98 +781,263 @@ function renderComms(notification){
   if(ch.dashboard) $('dashboard-preview').textContent=ch.dashboard.body;
 }
 
+// ═══ Render: Activity feed ═══
 function renderActivityFeed(entries){
-  if(!entries||!entries.length)return;
-  $('activity-feed').innerHTML=entries.slice(0,15).map(e=>{
-    const glow=AGENT_GLOWS[e.agent]||'agent-glow-monitor';
+  if(!entries||!entries.length){
+    $('activity-feed').innerHTML='<div class="text-center text-on-surface-variant font-label-code text-label-code py-10">Run a scenario to see agent activity.</div>';
+    return;
+  }
+  const filtered=activeAgent?entries.filter(e=>(e.agent||'')===agentFull(activeAgent)):entries;
+  if(!filtered.length){
+    $('activity-feed').innerHTML=`<div class="text-center text-on-surface-variant font-label-code text-label-code py-10">No ${activeAgent.toUpperCase()} events yet.</div>`;
+    return;
+  }
+  $('activity-feed').innerHTML=filtered.slice(0,20).map(e=>{
     const color=AGENT_COLORS[e.agent]||'text-monitoring-blue';
-    const bg=AGENT_BG[e.agent]||'bg-monitoring-blue/20';
+    const bg=AGENT_BG[e.agent]||'bg-monitoring-blue/15';
+    const icon=AGENT_ICONS[e.agent]||'radar';
     const name=(e.agent||'').replace('_agent','').toUpperCase();
     const time=e.timestamp?e.timestamp.substring(11,19):'';
-    return `<div class="${glow} bg-surface-container/50 p-3 rounded-r-lg border border-slate-border/50 slide-in">
-      <div class="flex justify-between items-start mb-2">
-        <span class="${bg} ${color} px-2 py-0.5 rounded text-[10px] font-bold font-label-code">${name}</span>
-        <span class="text-[10px] text-on-surface-variant font-label-code">${time}</span>
+    const chip=VERDICT_CHIP[e.policy_verdict];
+    const vtext=VERDICT_TEXT[e.policy_verdict];
+    let ctx='';
+    if(e.detail?.benefit_type) ctx=` <span class="text-on-surface-variant font-normal">(${e.detail.benefit_type.replace(/_/g,' ')})</span>`;
+    return `<div class="panel-low p-3 flex gap-3 items-start">
+      <div class="w-9 h-9 rounded-lg ${bg} flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[16px] ${color}">${icon}</span></div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="font-label-code text-[11px] ${color} font-semibold">${name}</span>
+          <span class="text-[10px] text-on-surface-variant font-label-code">${time}</span>
+        </div>
+        <p class="text-xs font-label-code leading-relaxed text-on-surface-variant"><span class="text-on-surface">${e.action}${ctx}</span> · ${e.sub_component}</p>
+        ${chip?`<span class="inline-block mt-1.5 ${chip}">${vtext}</span>`:''}
       </div>
-      <p class="text-sm font-label-code leading-relaxed text-on-surface-variant"><span class="text-on-surface">${e.action}</span> · ${e.sub_component}</p>
-      ${e.policy_verdict?`<span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold font-label-code ${e.policy_verdict==='auto_approve'||e.policy_verdict==='auto_approved'?'bg-execution-emerald/20 text-execution-emerald':e.policy_verdict==='escalate'?'bg-alert-amber/20 text-alert-amber':'bg-status-error/20 text-status-error'}">${e.policy_verdict}</span>`:''}
     </div>`}).join('');
 }
 
-// ═══ Audit Trail ═══
+async function refreshActivity(){
+  try{
+    const entries=await api('/api/audit/entries?limit=25');
+    renderActivityFeed(entries);
+  }catch(_){/* keep current feed */}
+}
+
+// ═══ Audit ═══
+function skeletonRows(count){
+  return Array.from({length:count},()=>
+    `<div class="px-4 md:px-6 py-4 flex items-start gap-3 md:gap-4">
+      <div class="skeleton w-9 h-9 rounded-lg flex-shrink-0"></div>
+      <div class="flex-1 space-y-2">
+        <div class="skeleton h-3 w-1/3"></div>
+        <div class="skeleton h-3 w-2/3"></div>
+      </div>
+    </div>`).join('');
+}
 async function loadAudit(){
+  $('audit-entries-list').innerHTML=skeletonRows(6);
   try{
     const [status,entries]=await Promise.all([api('/api/audit/status'),api('/api/audit/entries?limit=50')]);
     $('audit-count').textContent=status.entries+' EVENTS';
     $('chain-status').textContent=status.valid?'CHAIN VALID':'CHAIN BROKEN';
     $('chain-status').className='font-label-code text-[10px] '+(status.valid?'text-execution-emerald':'text-status-error');
-    $('audit-chain-status').textContent=status.valid?'CHAIN VALID — TAMPER-EVIDENT':'⚠ CHAIN BROKEN';
+    $('audit-chain-status').textContent=status.valid?'CHAIN VALID — TAMPER-EVIDENT':'CHAIN BROKEN';
     $('audit-chain-status').className='font-label-code text-label-code '+(status.valid?'text-execution-emerald':'text-status-error');
     $('audit-entry-count').textContent=status.entries+' entries · last: '+(status.last_hash||'genesis');
-    if(!entries.length){$('audit-entries-list').innerHTML='<div class="px-6 py-8 text-center text-on-surface-variant font-label-code">No audit entries yet.</div>';return;}
+    $('settings-chain').textContent=status.valid?'VALID': 'BROKEN';
+    $('settings-chain').className='chip '+(status.valid?'chip-ok':'chip-err');
+    if(!entries.length){$('audit-entries-list').innerHTML='<div class="px-4 md:px-6 py-10 text-center text-on-surface-variant font-label-code">No audit entries yet. Run a scenario to generate the first one.</div>';return;}
     $('audit-entries-list').innerHTML=entries.map(e=>{
       const color=AGENT_COLORS[e.agent]||'text-monitoring-blue';
-      const bg=AGENT_BG[e.agent]||'bg-monitoring-blue/20';
+      const bg=AGENT_BG[e.agent]||'bg-monitoring-blue/15';
+      const icon=AGENT_ICONS[e.agent]||'radar';
       const name=(e.agent||'').replace('_agent','');
-      return `<div class="px-6 py-4 hover:bg-surface-variant/30 transition-all flex items-start gap-4">
-        <div class="flex-shrink-0 mt-1"><span class="${bg} ${color} px-2 py-1 rounded text-[10px] font-bold font-label-code uppercase">${name}</span></div>
+      const chip=VERDICT_CHIP[e.policy_verdict];
+      const vtext=VERDICT_TEXT[e.policy_verdict];
+      let ctx='';
+      if(e.detail?.benefit_type) ctx=` <span class="text-on-surface-variant font-normal">(${e.detail.benefit_type.replace(/_/g,' ')})</span>`;
+      return `<div class="px-4 md:px-6 py-4 hover:bg-surface-variant/30 transition-colors flex items-start gap-3 md:gap-4">
+        <div class="flex-shrink-0 mt-0.5"><span class="w-9 h-9 rounded-lg ${bg} ${color} flex items-center justify-center"><span class="material-symbols-outlined text-[16px]">${icon}</span></span></div>
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 flex-wrap"><span class="font-label-code text-label-code text-on-surface font-bold">${e.action}</span><span class="text-on-surface-variant font-label-code text-[11px]">· ${e.sub_component}</span>
-          ${e.policy_verdict?`<span class="px-2 py-0.5 rounded text-[9px] font-bold font-label-code ${e.policy_verdict==='auto_approve'||e.policy_verdict==='auto_approved'?'bg-execution-emerald/20 text-execution-emerald':e.policy_verdict==='escalate'?'bg-alert-amber/20 text-alert-amber':'bg-status-error/20 text-status-error'}">${e.policy_verdict}</span>`:''}</div>
-          <div class="flex items-center gap-4 mt-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-label-code text-label-code text-on-surface font-semibold">${e.action}${ctx}</span>
+            <span class="text-on-surface-variant font-label-code text-[11px]">· ${e.sub_component}</span>
+            ${chip?`<span class="${chip}">${vtext}</span>`:''}
+          </div>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-0.5 mt-1">
             <span class="font-label-code text-[10px] text-on-surface-variant">${e.timestamp||''}</span>
-            <span class="font-label-code text-[10px] text-on-surface-variant opacity-50">${e.immutable_hash||''}</span>
-            ${e.event_id?`<span class="font-label-code text-[10px] text-secondary/50">${e.event_id}</span>`:''}
+            <span class="font-label-code text-[10px] text-on-surface-variant opacity-60">${e.immutable_hash||''}</span>
+            <span class="font-label-code text-[10px] text-secondary/60">${e.event_id||''}</span>
           </div>
         </div>
       </div>`}).join('');
-  }catch(e){$('audit-entries-list').innerHTML='<div class="px-6 py-8 text-center text-status-error font-label-code">Failed to load audit entries.</div>';}
+  }catch(e){
+    $('audit-entries-list').innerHTML='<div class="px-4 md:px-6 py-10 text-center text-status-error font-label-code">Failed to load audit entries.</div>';
+  }
 }
 
-// ═══ Scenario Runner ═══
+// ═══ Notifications panel ═══
+async function loadNotifications(){
+  const list=$('notifications-list');
+  try{
+    const entries=await api('/api/audit/entries?limit=6');
+    if(!entries.length){list.innerHTML='<div class="px-4 py-8 text-center text-on-surface-variant font-label-code text-[11px]">No events yet.</div>';return;}
+    list.innerHTML=entries.map(e=>{
+      const color=AGENT_COLORS[e.agent]||'text-monitoring-blue';
+      const bg=AGENT_BG[e.agent]||'bg-monitoring-blue/15';
+      const icon=AGENT_ICONS[e.agent]||'radar';
+      const name=(e.agent||'').replace('_agent','');
+      const time=e.timestamp?e.timestamp.substring(11,19):'';
+      return `<div class="px-4 py-3 flex items-start gap-3 hover:bg-surface-variant/40 transition-colors">
+        <span class="w-8 h-8 rounded-lg ${bg} ${color} flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[15px]">${icon}</span></span>
+        <div class="flex-1 min-w-0">
+          <p class="font-label-code text-[11px] text-on-surface truncate">${e.action}</p>
+          <p class="font-label-code text-[10px] text-on-surface-variant">${name} · ${e.sub_component}</p>
+        </div>
+        <span class="font-label-code text-[10px] text-on-surface-variant">${time}</span>
+      </div>`;
+    }).join('');
+  }catch(_){
+    list.innerHTML='<div class="px-4 py-8 text-center text-status-error font-label-code text-[11px]">Failed to load events.</div>';
+  }
+}
+
+function togglePanel(panel,btn){
+  const isOpen=!panel.classList.contains('hidden');
+  document.querySelectorAll('#notifications-panel,#settings-panel').forEach(p=>p.classList.add('hidden'));
+  document.querySelectorAll('#notifications-btn,#settings-btn').forEach(b=>b.setAttribute('aria-expanded','false'));
+  if(!isOpen){
+    panel.classList.remove('hidden');
+    btn.setAttribute('aria-expanded','true');
+    if(panel.id==='notifications-panel')loadNotifications();
+    if(panel.id==='settings-panel')loadSettings();
+  }
+}
+function closePanels(){
+  document.querySelectorAll('#notifications-panel,#settings-panel').forEach(p=>p.classList.add('hidden'));
+  document.querySelectorAll('#notifications-btn,#settings-btn').forEach(b=>b.setAttribute('aria-expanded','false'));
+}
+async function loadSettings(){
+  try{
+    const health=await api('/api/health');
+    $('settings-health').textContent=health.prava_sandbox_reachable?'REACHABLE':'OFFLINE';
+    $('settings-health').className='chip '+(health.prava_sandbox_reachable?'chip-ok':'chip-err');
+  }catch(_){
+    $('settings-health').textContent='OFFLINE';
+    $('settings-health').className='chip chip-err';
+  }
+}
+
+// ═══ Auto-refresh ═══
+function setupAutoRefresh(){
+  const toggle=$('auto-refresh');
+  try{if(localStorage.getItem('skya_auto_refresh')==='1')toggle.checked=true;}catch(_){}
+  const apply=()=>{
+    if(autoRefreshTimer){clearInterval(autoRefreshTimer);autoRefreshTimer=null;}
+    if(toggle.checked)autoRefreshTimer=setInterval(()=>{refreshActivity();loadAudit();},12000);
+    try{localStorage.setItem('skya_auto_refresh',toggle.checked?'1':'0');}catch(_){}
+  };
+  apply();
+  toggle.addEventListener('change',apply);
+}
+
+// ═══ Sidebar (mobile) ═══
+function openSidebar(){$('sidebar').classList.add('open');$('sidebar-backdrop').classList.add('show');}
+function closeSidebar(){$('sidebar').classList.remove('open');$('sidebar-backdrop').classList.remove('show');}
+
+// ═══ Scenario runner ═══
 async function runScenario(scenario){
   clearInterval(poller);
   $('pay-btn').disabled=true;
+  $('decision-panel').classList.add('hidden');
+  $('approval').checked=false;
   $('result-panel').style.display='none';
   AGENT_SEQ.forEach(a=>setAgentState(a,'IDLE','text-on-surface-variant'));
-  
-  // Animate pipeline
-  await animatePipeline();
+
+  // Processing state — synchronous, before the request (no timers to race)
+  AGENT_SEQ.forEach(a=>setAgentState(a,'PROCESSING…','text-secondary'));
 
   try{
     proposal=await api('/api/proposals/demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario})});
     const p=proposal.proposal,v=proposal.verdict,d=proposal.disruption;
 
-    // Update agent states
-    const vtype=v.verdict==='auto_approve'?'APPROVED':v.verdict==='escalate'?'ESCALATED':'BLOCKED';
-    const vcolor=v.verdict==='auto_approve'?'text-execution-emerald':v.verdict==='escalate'?'text-alert-amber':'text-status-error';
-    setAgentState('orchestrator',vtype,vcolor);
-    setAgentState('rebooking',v.verdict==='blocked'?'BLOCKED':v.verdict==='escalate'?'AWAITING':'BOOKED',vcolor);
+    // Resolve agent states from the real response (quick stagger, state-conveying)
+    AGENT_SEQ.forEach((a,i)=>setTimeout(()=>setAgentState(a,'DONE','text-execution-emerald'),60*i));
+    setTimeout(()=>{
+      const vtype=v.verdict==='auto_approve'?'APPROVED':v.verdict==='escalate'?'ESCALATED':'BLOCKED';
+      const vcolor=v.verdict==='auto_approve'?'text-execution-emerald':v.verdict==='escalate'?'text-alert-amber':'text-status-error';
+      setAgentState('orchestrator',vtype,vcolor);
+      setAgentState('rebooking',v.verdict==='blocked'?'BLOCKED':v.verdict==='escalate'?'AWAITING':'BOOKED',vcolor);
+    },60*AGENT_SEQ.length);
 
-    // Show results
     $('result-panel').style.display='block';
     renderCompare(d,p);
     renderCandidates(p.all_candidates);
     renderVerdict(v);
     $('verdict-method').textContent=p.reasoning_method==='openai_ranked'?'OpenAI re-ranked':'Deterministic 6-factor scoring';
 
-    // Benefits
-    renderBenefits(proposal.all_benefits);
-
-    // Comms
+    const benefits = proposal.all_benefits||[];
+    renderBenefits(benefits);
+    renderBenefitsLog(benefits);
     renderComms(proposal.notification);
 
-    // Payment
-    $('pay-btn').disabled=v.verdict==='blocked';
-    $('payment-status').innerHTML=v.verdict==='blocked'?'<span class="text-status-error">🚫 Blocked by policy. No payment session.</span>':'Ready to create a Prava Sandbox session.';
+    // Payment readiness
+    if(v.verdict==='blocked'){
+      $('pay-btn').disabled=true;
+      $('payment-status').innerHTML='<span class="text-status-error flex items-center gap-2"><span class="material-symbols-outlined text-base">block</span> Blocked by policy. No payment session.</span>';
+    }else if(v.verdict==='escalate'){
+      $('decision-panel').classList.remove('hidden');
+      $('pay-btn').disabled=true;
+      $('payment-status').textContent='Approve the proposal to unlock the Prava payment session.';
+    }else{
+      $('pay-btn').disabled=false;
+      $('payment-status').textContent='Ready to create a Prava Sandbox session.';
+    }
 
-    // Activity feed
-    const entries=await api('/api/audit/entries?limit=20');
-    renderActivityFeed(entries);
+    refreshActivity();
     loadAudit();
   }catch(e){
     AGENT_SEQ.forEach(a=>setAgentState(a,'ERROR','text-status-error'));
     $('result-panel').style.display='block';
+    $('payment-status').innerHTML=`<span class="text-status-error">${e.message}</span>`;
+  }
+}
+
+// ═══ Member decision (escalated proposals) ═══
+async function decideProposal(decision){
+  if(!proposal||proposal.verdict.verdict!=='escalate')return;
+  $('decision-approve').disabled=true;
+  $('decision-decline').disabled=true;
+  try{
+    await api(`/api/proposals/${proposal.proposal_id}/decision`,{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision})
+    });
+    proposal.decision=decision;
+    $('decision-panel').innerHTML=decision==='approve'
+      ? `<div class="flex items-start gap-3">
+           <span class="material-symbols-outlined text-execution-emerald mt-0.5">check_circle</span>
+           <div class="flex-1">
+             <p class="font-label-code text-label-code text-on-surface mb-1">Approved</p>
+             <p class="text-sm text-on-surface-variant">Proposal approved — the Prava payment session is unlocked.</p>
+           </div>
+         </div>`
+      : `<div class="flex items-start gap-3">
+           <span class="material-symbols-outlined text-status-error mt-0.5">person_off</span>
+           <div class="flex-1">
+             <p class="font-label-code text-label-code text-on-surface mb-1">Declined</p>
+             <p class="text-sm text-on-surface-variant">Declined — routed to a human agent for review.</p>
+           </div>
+         </div>`;
+    if(decision==='approve'){
+      $('pay-btn').disabled=false;
+      $('payment-status').textContent='Approved — ready to create a Prava Sandbox session.';
+    }else{
+      $('pay-btn').disabled=true;
+      $('payment-status').textContent='Proposal declined — no payment session will be created.';
+    }
+    loadAudit();
+  }catch(e){
+    $('decision-approve').disabled=false;
+    $('decision-decline').disabled=false;
     $('payment-status').innerHTML=`<span class="text-status-error">${e.message}</span>`;
   }
 }
@@ -710,28 +1047,68 @@ async function startPayment(){
   if(!proposal)return;
   $('pay-btn').disabled=true;
   try{
-    const session=await api(`/api/proposals/${proposal.proposal_id}/start-prava`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({member_email:$('email').value,member_approved:$('approval').checked})});
+    const session=await api(`/api/proposals/${proposal.proposal_id}/start-prava`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({member_email:$('email').value,member_approved:$('approval').checked})
+    });
     window.open(session.iframe_url,'_blank','noopener');
     $('payment-status').innerHTML=`<span class="text-execution-emerald">Prava session created.</span> Complete the secure flow in the new tab. Expires ${new Date(session.expires_at).toLocaleTimeString()}.`;
-    poller=setInterval(async()=>{try{const s=await api(`/api/prava/sessions/${session.session_id}`);
-      if(s.status==='completed'){clearInterval(poller);$('payment-status').innerHTML='<span class="text-execution-emerald">✅ Payment approved. One-time credential held server-side.</span>';loadAudit();}
-      else if(s.status==='failed'){clearInterval(poller);$('payment-status').innerHTML='<span class="text-status-error">❌ Payment flow failed.</span>';}
-    }catch(_){}},3000);
-  }catch(e){$('payment-status').innerHTML=`<span class="text-status-error">${e.message}</span>`;$('pay-btn').disabled=false;}
+    poller=setInterval(async()=>{
+      try{
+        const s=await api(`/api/prava/sessions/${session.session_id}`);
+        if(s.status==='completed'){
+          clearInterval(poller);
+          $('payment-status').innerHTML='<span class="text-execution-emerald flex items-center gap-2"><span class="material-symbols-outlined text-base">check_circle</span> Payment approved. One-time credential held server-side.</span>';
+          loadAudit();
+        }else if(s.status==='failed'){
+          clearInterval(poller);
+          $('payment-status').innerHTML='<span class="text-status-error flex items-center gap-2"><span class="material-symbols-outlined text-base">error</span> Payment flow failed.</span>';
+        }
+      }catch(_){}
+    },3000);
+  }catch(e){
+    $('payment-status').innerHTML=`<span class="text-status-error">${e.message}</span>`;
+    $('pay-btn').disabled=false;
+  }
 }
 
 // ═══ Init ═══
+$('menu-btn').addEventListener('click',openSidebar);
+$('sidebar-backdrop').addEventListener('click',closeSidebar);
+document.querySelectorAll('.sidebar-link').forEach(l=>l.addEventListener('click',()=>selectAgent(l.dataset.agent)));
+document.querySelectorAll('.nav-link').forEach(l=>l.addEventListener('click',()=>onNav(l.dataset.view)));
+$('activity-filter').addEventListener('click',resetToAll);
+$('view-audit-btn').addEventListener('click',()=>onNav('audit'));
+$('notifications-btn').addEventListener('click',e=>{e.stopPropagation();togglePanel($('notifications-panel'),$('notifications-btn'));});
+$('settings-btn').addEventListener('click',e=>{e.stopPropagation();togglePanel($('settings-panel'),$('settings-btn'));});
+$('notifications-view-all').addEventListener('click',()=>{closePanels();onNav('audit');});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#notifications-panel,#notifications-btn,#settings-panel,#settings-btn'))closePanels();
+});
 document.querySelectorAll('.scenario-btn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();runScenario(b.dataset.scenario);}));
-document.querySelectorAll('.scenario-row').forEach(r=>r.addEventListener('click',()=>runScenario(r.dataset.scenario)));
+document.querySelectorAll('.scenario-row').forEach(r=>{
+  r.addEventListener('click',()=>runScenario(r.dataset.scenario));
+  r.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();runScenario(r.dataset.scenario);}});
+});
+document.querySelectorAll('.agent-status').forEach(c=>{
+  c.addEventListener('click',()=>selectAgent(c.dataset.agent));
+  c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectAgent(c.dataset.agent);}});
+});
 $('pay-btn').addEventListener('click',startPayment);
+$('decision-approve').addEventListener('click',()=>decideProposal('approve'));
+$('decision-decline').addEventListener('click',()=>decideProposal('decline'));
+setupAutoRefresh();
 
 api('/api/health').then(x=>{
-  $('health-dot').className='w-2 h-2 rounded-full '+(x.prava_sandbox_reachable?'bg-execution-emerald animate-pulse':'bg-status-error');
-  $('health-text').textContent=x.prava_sandbox_reachable?'PRAVA SANDBOX ✓':'PRAVA SANDBOX ✗';
-}).catch(()=>{$('health-dot').className='w-2 h-2 rounded-full bg-status-error';$('health-text').textContent='OFFLINE';});
+  $('health-dot').className='w-2 h-2 rounded-full '+(x.prava_sandbox_reachable?'bg-execution-emerald':'bg-status-error');
+  $('health-text').textContent=x.prava_sandbox_reachable?'PRAVA SANDBOX OK':'PRAVA SANDBOX OFF';
+}).catch(()=>{
+  $('health-dot').className='w-2 h-2 rounded-full bg-status-error';
+  $('health-text').textContent='OFFLINE';
+});
 
+resetToAll();
 loadAudit();
-switchView('monitor');
 </script>
 </body>
 </html>
