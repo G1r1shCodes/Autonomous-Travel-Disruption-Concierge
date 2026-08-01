@@ -4,3 +4,5 @@ pydantic>=2
 pyyaml
 python-dotenv
 requests
+twilio
+openai

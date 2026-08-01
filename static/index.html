@@ -440,19 +440,17 @@ tailwind.config = {
             </div>
             <div class="bg-surface-container p-4 rounded-lg border border-slate-border mb-4">
               <p class="font-label-code text-[11px] text-on-surface-variant uppercase mb-1">Test Card Only</p>
-              <p class="font-label-code text-label-code text-on-surface">Visa <span class="text-secondary">4622 9431 2323 2150</span> · Exp <span class="text-secondary">12/27</span> · CVV <span class="text-secondary">093</span> · OTP <span class="text-secondary">456789</span></p>
+              <p class="font-label-code text-label-code text-on-surface">Visa <span class="text-secondary">4622 9431 2313 7789</span> · Exp <span class="text-secondary">12/27</span> · CVV <span class="text-secondary">757</span> · OTP <span class="text-secondary">456789</span></p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+            <div class="space-y-4">
               <div>
                 <label for="email" class="font-label-code text-[11px] text-on-surface-variant uppercase tracking-widest mb-2 block">Member Email</label>
-                <input id="email" name="email" type="email" placeholder="traveler@example.com" class="input" autocomplete="email">
+                <input id="email" name="email" type="email" placeholder="traveler@example.com" class="input w-full" autocomplete="email">
               </div>
-              <div class="space-y-3">
-                <label for="approval" class="flex items-center gap-2 font-label-code text-[11px] text-on-surface-variant cursor-pointer select-none">
-                  <input id="approval" type="checkbox" class="accent-secondary w-4 h-4"><span>I approve this escalated proposal</span>
-                </label>
-                <button id="pay-btn" disabled class="btn btn-primary w-full">Continue to Prava Sandbox</button>
-              </div>
+              <label for="approval" class="flex items-center gap-2 font-label-code text-[12px] text-on-surface-variant cursor-pointer select-none">
+                <input id="approval" type="checkbox" class="accent-secondary w-4 h-4"><span>I approve this escalated proposal</span>
+              </label>
+              <button id="pay-btn" disabled class="btn btn-primary w-full">Continue to Prava Sandbox</button>
             </div>
             <!-- Decision checkpoint (escalated proposals) -->
             <div id="decision-panel" class="hidden mt-4 p-4 rounded-lg border border-alert-amber/40 bg-alert-amber/5">
@@ -488,7 +486,7 @@ tailwind.config = {
               Run a scenario to see agent activity.
             </div>
           </div>
-          <div class="px-5 py-3 border-t border-slate-border bg-surface-container/40 flex items-center gap-2">
+          <div class="px-5 py-3 border-t border-slate-border bg-surface-container/40 flex items-center gap-2 mt-auto">
             <span class="status-dot live"></span>
             <span class="font-label-code text-[10px] text-on-surface-variant uppercase tracking-wider">Live activity</span>
           </div>

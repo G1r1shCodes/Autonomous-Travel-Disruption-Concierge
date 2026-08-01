@@ -6,6 +6,8 @@ Matches §3.4 / §4.2 of the pitch doc:
 - Approve/decline action buttons for escalated proposals
 - WhatsApp/SMS message templates (structurally real, delivery mocked)
 """
+import os
+from twilio.rest import Client
 from app.audit import log_event
 from app.models import Disruption, CommsNotification, MemberProfile
 
@@ -113,6 +115,22 @@ class CommsAgent:
 
         # SMS fallback
         sms_msg = self._format_sms(disruption, after, is_escalated)
+        
+        twilio_account = os.getenv("TWILIO_ACCOUNT_SID")
+        twilio_token = os.getenv("TWILIO_AUTH_TOKEN")
+        twilio_from = os.getenv("TWILIO_PHONE_NUMBER")
+        member_phone = os.getenv("MEMBER_PHONE_NUMBER")
+
+        if twilio_account and twilio_token and twilio_from and member_phone:
+            try:
+                client = Client(twilio_account, twilio_token)
+                client.messages.create(
+                    body=sms_msg,
+                    from_=twilio_from,
+                    to=member_phone
+                )
+            except Exception as e:
+                print(f"Twilio SMS failed: {e}")
 
         notifications = [
             CommsNotification(

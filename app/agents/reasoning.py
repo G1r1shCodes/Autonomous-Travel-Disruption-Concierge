@@ -12,9 +12,15 @@ import os
 import yaml
 from pathlib import Path
 
-import requests
+from openai import OpenAI
+from pydantic import BaseModel
 from app.models import Disruption, RebookingProposal, RebookingCandidate
 from app.audit import log_event
+
+class OpenAIChoice(BaseModel):
+    candidate_flight: str
+    reason: str
+
 
 POLICY_PATH = Path(__file__).parent.parent.parent / "policy" / "policy.yaml"
 
@@ -116,47 +122,41 @@ class ReasoningAgent:
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             return None
+        
+        client = OpenAI(api_key=api_key)
         prompt = {
             "task": "Select the best rebooking option for a disrupted traveler.",
             "disruption": disruption.model_dump(),
             "candidates": candidates,
             "rules": [
                 "Prefer the lowest fare delta when cabin class is unchanged.",
-                "Return JSON only: {\"candidate_flight\": string, \"reason\": string}.",
                 "You cannot authorize bookings or override policy.",
             ],
         }
         try:
-            response = requests.post(
-                "https://api.openai.com/v1/responses",
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": "gpt-5.6-terra", "input": json.dumps(prompt)},
+            response = client.beta.chat.completions.parse(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a travel disruption concierge."},
+                    {"role": "user", "content": json.dumps(prompt)}
+                ],
+                response_format=OpenAIChoice,
                 timeout=20,
             )
-            response.raise_for_status()
-            payload = response.json()
-            output_text = payload.get("output_text", "")
-            if not output_text:
-                for message in payload.get("output", []):
-                    for content in message.get("content", []):
-                        if content.get("type") == "output_text":
-                            output_text = content.get("text", "")
-                            break
-                    if output_text:
-                        break
-            choice = json.loads(output_text)
-            selected = next((item for item in candidates if item["flight"] == choice.get("candidate_flight")), None)
+            choice = response.choices[0].message.parsed
+            selected = next((item for item in candidates if item["flight"] == choice.candidate_flight), None)
             if selected:
                 log_event(
                     agent="reasoning_agent",
                     sub_component="openai_ranker",
                     action="rank_candidates",
-                    detail={"selected_flight": selected["flight"], "reason": choice.get("reason", "")},
+                    detail={"selected_flight": selected["flight"], "reason": choice.reason},
                     disruption_id=disruption.disruption_id,
                 )
             return selected
-        except (requests.RequestException, ValueError, json.JSONDecodeError, StopIteration):
+        except Exception as e:
             # The deterministic scorer is the safe fallback for demo/API outages.
+            print(f"OpenAI error: {e}")
             return None
 
     # ── Main proposal entry point ────────────────────────────────────

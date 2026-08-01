@@ -5,6 +5,7 @@ never receives a Prava secret, Visa network token, or dynamic CVV.
 """
 import os
 import time
+import uuid
 from decimal import Decimal
 from typing import Any
 
