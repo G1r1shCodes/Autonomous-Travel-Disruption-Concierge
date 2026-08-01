@@ -1,7 +1,8 @@
 # Autonomous Travel-Disruption Concierge — Starter Scaffold
 
 Everything here **runs end-to-end right now with zero API keys**, using mocked
-integrations that match the real shape of Amadeus/Prava/Twilio calls. This is
+integrations that match the real shape of Duffel/FlightAware/Prava/Twilio
+calls. This is
 so you always have a working fallback demo, and so you're editing real code
 instead of starting from a blank folder.
 
@@ -31,9 +32,10 @@ consoles (no `PYTHONIOENCODING` or other encoding workarounds needed).
    https://playground.prava.space/ first so you know what you're wiring up.
    Get API keys at https://dashboard.prava.space/.
 
-2. **Leave Amadeus mocked** (`app/agents/reasoning.py`) unless you have spare
-   time — self-service signup is decommissioned, and it's not what's being
-   judged. The mock candidate list is enough for a believable demo.
+2. **Leave Duffel/FlightAware mocked** (`app/agents/reasoning.py`,
+   `app/agents/monitor.py`) unless you have spare time — the former
+   self-service provider was decommissioned, and it's not what's being
+   judged. The mock status/candidate data is enough for a believable demo.
 
 3. **Use the FastAPI dashboard** (`app/main.py`) as a thin wrapper around the
    same agent objects used in `demo/run_demo.py`. It exposes health checks,

@@ -774,9 +774,29 @@ function renderBenefits(benefits){
 function renderComms(notification){
   if(!notification?.channels)return;
   const ch=notification.channels;
-  if(ch.whatsapp) $('whatsapp-preview').textContent=ch.whatsapp.body;
-  if(ch.sms) $('sms-preview').textContent=ch.sms.body;
-  if(ch.dashboard) $('dashboard-preview').textContent=ch.dashboard.body;
+  const render=(el,n)=>{
+    if(!n)return;
+    el.textContent=n.body||'';
+    const acts=(n.actions||[]).filter(a=>a.url);
+    if(acts.length){
+      const wrap=document.createElement('div');
+      wrap.className='flex flex-wrap gap-2 mt-4';
+      acts.forEach(a=>{
+        const link=document.createElement('a');
+        link.href=a.url;
+        link.target='_blank';
+        link.rel='noopener';
+        link.className='btn '+(a.action==='approve'?'btn-primary':'btn-danger');
+        link.style.minHeight='2.25rem';
+        link.textContent=a.label;
+        wrap.appendChild(link);
+      });
+      el.appendChild(wrap);
+    }
+  };
+  render($('whatsapp-preview'),ch.whatsapp);
+  render($('sms-preview'),ch.sms);
+  render($('dashboard-preview'),ch.dashboard);
 }
 
 // ═══ Render: Activity feed ═══

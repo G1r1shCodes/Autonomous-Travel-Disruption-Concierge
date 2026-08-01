@@ -25,7 +25,7 @@ class OpenAIChoice(BaseModel):
 POLICY_PATH = Path(__file__).parent.parent.parent / "policy" / "policy.yaml"
 
 
-# ── Mock candidate data simulating Amadeus Flight Offers Search ──────
+# ── Mock candidate data simulating Duffel flight offers search ──────
 
 MOCK_CANDIDATES = {
     "cancelled": [

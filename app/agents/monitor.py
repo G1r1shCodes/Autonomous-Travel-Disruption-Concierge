@@ -6,8 +6,8 @@ Structurally demonstrates the architecture from §3.1 and §4.2:
 - Diff-based event emission — only fires on meaningful state changes
 - MCT (Minimum Connection Time) calculation for missed-connection detection
 
-Amadeus API remains mocked (§6.2: self-service signup decommissioned),
-but the detection logic is structurally real.
+FlightAware AeroAPI remains mocked (§6.2: former self-service provider
+decommissioned), but the detection logic is structurally real.
 """
 import time
 from datetime import datetime, timedelta
@@ -15,7 +15,7 @@ from app.models import Disruption, FlightSegment
 from app.audit import log_event
 
 
-# ── Mock flight data simulating Amadeus Flight Status API responses ───
+# ── Mock flight data simulating FlightAware AeroAPI status responses ───
 
 MOCK_ITINERARIES = {
     "PNR-DEMO-001": {
@@ -156,7 +156,7 @@ class MonitorAgent:
     def detect(self, pnr: str) -> Disruption:
         """Detect a disruption for the given PNR.
 
-        In production, this would poll Amadeus Flight Status API with
+        In production, this would poll FlightAware AeroAPI with
         adaptive cadence and compute diffs against Redis-cached state.
         """
         itinerary = MOCK_ITINERARIES.get(pnr, MOCK_ITINERARIES["PNR-DEMO-001"])
@@ -197,7 +197,7 @@ class MonitorAgent:
 
         log_event(
             agent="monitor_agent",
-            sub_component="amadeus_poll",
+            sub_component="flightaware_poll",
             action="detect_disruption" if is_new else "confirm_disruption",
             detail={
                 **disruption.model_dump(),

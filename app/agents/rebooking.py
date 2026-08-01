@@ -94,7 +94,7 @@ class RebookingAgent:
             "payment_detail": payment.model_dump(),
         }
         log_event(
-            "rebooking_agent", "amadeus", "book_flight",
+            "rebooking_agent", "duffel", "book_flight",
             booking,
             disruption_id=proposal.disruption_id,
         )

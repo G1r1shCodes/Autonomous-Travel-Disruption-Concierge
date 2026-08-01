@@ -3,8 +3,10 @@
 Matches §3.4 / §4.2 of the pitch doc:
 - Multi-channel support: dashboard, WhatsApp, SMS
 - Before/after itinerary comparison
-- Approve/decline action buttons for escalated proposals
-- WhatsApp/SMS message templates (structurally real, delivery mocked)
+- Approve/decline action buttons for escalated proposals — delivered as
+  Twilio WhatsApp URL buttons (persistent_action) and an SMS link
+- Delivery is env-gated: without Twilio credentials the payloads remain
+  structurally-real previews (graceful degradation for demo/offline runs)
 """
 import os
 from twilio.rest import Client
@@ -13,7 +15,9 @@ from app.models import Disruption, CommsNotification, MemberProfile
 
 
 class CommsAgent:
-    """Queues member-facing updates across multiple channels."""
+    """Queues and (optionally) delivers member-facing updates across channels."""
+
+    # ── Template builders ────────────────────────────────────────────
 
     def _build_before_after(self, disruption: Disruption, rebooking: dict) -> tuple[dict, dict]:
         """Build before/after itinerary comparison data."""
@@ -36,7 +40,8 @@ class CommsAgent:
 
     def _format_whatsapp(
         self, disruption: Disruption, before: dict, after: dict,
-        benefit_summary: str, is_escalated: bool, approve_url: str = ""
+        benefit_summary: str, is_escalated: bool,
+        approve_url: str = "", decline_url: str = ""
     ) -> str:
         """Build a WhatsApp-style message template (§3.4)."""
         lines = [
@@ -58,29 +63,79 @@ class CommsAgent:
         if is_escalated and approve_url:
             lines.extend([
                 f"👆 This rebooking needs your approval:",
-                f"✅ Approve: {approve_url}?action=approve",
-                f"❌ Decline: {approve_url}?action=decline",
+                f"✅ Approve: {approve_url}",
+                f"❌ Decline: {decline_url or approve_url.replace('action=approve', 'action=decline')}",
             ])
         else:
             lines.append("No action required — your concierge handled everything.")
 
         return "\n".join(lines)
 
-    def _format_sms(self, disruption: Disruption, after: dict, is_escalated: bool) -> str:
+    def _format_sms(self, disruption: Disruption, after: dict, is_escalated: bool,
+                    approve_url: str = "", decline_url: str = "") -> str:
         """Build a concise SMS fallback message."""
         action = "Approval needed" if is_escalated else "Auto-rebooked"
+        if is_escalated and approve_url:
+            link = (f"Decide: Approve {approve_url} | "
+                    f"Decline {decline_url or approve_url.replace('action=approve', 'action=decline')}")
+        else:
+            link = "Details: https://concierge.example.com/status"
         return (
             f"Flight {disruption.original_flight} {disruption.reason.replace('_', ' ')}. "
-            f"{action}: {after.get('flight', '—')}. "
-            f"Details: https://concierge.example.com/status"
+            f"{action}: {after.get('flight', '—')}. {link}"
         )
 
-    def notify(self, disruption: Disruption, rebooking: dict, benefit: dict,
-               member: MemberProfile = None) -> dict:
-        """Prepare and queue multi-channel notifications.
+    # ── Delivery (env-gated Twilio) ──────────────────────────────────
 
-        Returns a dict with per-channel message payloads — structurally
-        identical to what would be sent via Twilio WhatsApp/SMS APIs.
+    @staticmethod
+    def _twilio() -> Client | None:
+        """Return a Twilio client when credentials exist, else None."""
+        account = os.getenv("TWILIO_ACCOUNT_SID")
+        token = os.getenv("TWILIO_AUTH_TOKEN")
+        return Client(account, token) if account and token else None
+
+    def _send_whatsapp(self, body: str, approve_url: str = "", decline_url: str = "") -> bool:
+        """Send the WhatsApp message; URL buttons when escalated. Never raises."""
+        client = self._twilio()
+        wa_from = os.getenv("TWILIO_WHATSAPP_FROM")
+        member_phone = os.getenv("MEMBER_WHATSAPP_NUMBER")
+        if not (client and wa_from and member_phone):
+            return False
+        try:
+            kwargs: dict = {"body": body, "from_": wa_from, "to": member_phone}
+            if approve_url:
+                # Twilio WhatsApp URL buttons (max 3) — one-tap approve/decline.
+                kwargs["persistent_action"] = [approve_url, decline_url or approve_url]
+            client.messages.create(**kwargs)
+            return True
+        except Exception as e:
+            print(f"Twilio WhatsApp failed: {e}")
+            return False
+
+    def _send_sms(self, body: str) -> bool:
+        """Send the SMS fallback. Never raises."""
+        client = self._twilio()
+        sms_from = os.getenv("TWILIO_PHONE_NUMBER")
+        member_phone = os.getenv("MEMBER_PHONE_NUMBER")
+        if not (client and sms_from and member_phone):
+            return False
+        try:
+            client.messages.create(body=body, from_=sms_from, to=member_phone)
+            return True
+        except Exception as e:
+            print(f"Twilio SMS failed: {e}")
+            return False
+
+    # ── Public entry point ───────────────────────────────────────────
+
+    def notify(self, disruption: Disruption, rebooking: dict, benefit: dict,
+               member: MemberProfile = None, proposal_id: str = "",
+               public_base_url: str = "") -> dict:
+        """Prepare and deliver multi-channel notifications.
+
+        Returns per-channel payloads plus a ``delivered`` map (channel → bool).
+        ``proposal_id`` + ``public_base_url`` are needed to build the live
+        approve/decline URLs for escalated proposals.
         """
         if member is None:
             member = MemberProfile()
@@ -98,7 +153,12 @@ class CommsAgent:
         elif benefit_status == "awaiting_member_approval":
             benefit_summary = f"{benefit_type.replace('_', ' ').title()} pending your approval"
 
-        approve_url = "https://concierge.example.com/approve"
+        # Live approve/decline URLs for escalated proposals
+        base = (public_base_url or os.getenv("PUBLIC_BASE_URL", "")).rstrip("/")
+        approve_url = decline_url = ""
+        if is_escalated and proposal_id and base:
+            approve_url = f"{base}/api/comms/decision?proposal_id={proposal_id}&action=approve"
+            decline_url = f"{base}/api/comms/decision?proposal_id={proposal_id}&action=decline"
 
         # Dashboard notification (always sent)
         dashboard_msg = (
@@ -110,27 +170,24 @@ class CommsAgent:
 
         # WhatsApp message (§3.4 primary channel)
         whatsapp_msg = self._format_whatsapp(
-            disruption, before, after, benefit_summary, is_escalated, approve_url
+            disruption, before, after, benefit_summary, is_escalated, approve_url, decline_url
         )
 
         # SMS fallback
-        sms_msg = self._format_sms(disruption, after, is_escalated)
-        
-        twilio_account = os.getenv("TWILIO_ACCOUNT_SID")
-        twilio_token = os.getenv("TWILIO_AUTH_TOKEN")
-        twilio_from = os.getenv("TWILIO_PHONE_NUMBER")
-        member_phone = os.getenv("MEMBER_PHONE_NUMBER")
+        sms_msg = self._format_sms(disruption, after, is_escalated, approve_url, decline_url)
 
-        if twilio_account and twilio_token and twilio_from and member_phone:
-            try:
-                client = Client(twilio_account, twilio_token)
-                client.messages.create(
-                    body=sms_msg,
-                    from_=twilio_from,
-                    to=member_phone
-                )
-            except Exception as e:
-                print(f"Twilio SMS failed: {e}")
+        # Deliver via Twilio when configured (preview-only otherwise)
+        delivered = {}
+        if whatsapp_msg:
+            delivered["whatsapp"] = self._send_whatsapp(whatsapp_msg, approve_url, decline_url)
+        if sms_msg:
+            delivered["sms"] = self._send_sms(sms_msg)
+
+        actions = (
+            [{"label": "Approve", "action": "approve", "url": approve_url},
+             {"label": "Decline", "action": "decline", "url": decline_url}]
+            if is_escalated else []
+        )
 
         notifications = [
             CommsNotification(
@@ -140,8 +197,7 @@ class CommsAgent:
                 body=dashboard_msg,
                 before_itinerary=before,
                 after_itinerary=after,
-                actions=[{"label": "Approve", "action": "approve"}, {"label": "Decline", "action": "decline"}]
-                if is_escalated else [],
+                actions=actions,
             ),
             CommsNotification(
                 channel="whatsapp",
@@ -150,6 +206,7 @@ class CommsAgent:
                 body=whatsapp_msg,
                 before_itinerary=before,
                 after_itinerary=after,
+                actions=actions,
             ),
             CommsNotification(
                 channel="sms",
@@ -169,6 +226,7 @@ class CommsAgent:
                 "has_benefit": bool(benefit_summary),
                 "before_flight": before.get("flight"),
                 "after_flight": after.get("flight"),
+                "delivered": delivered,
             },
             disruption_id=disruption.disruption_id,
         )
@@ -177,4 +235,5 @@ class CommsAgent:
             "status": "queued",
             "channels": {n.channel: n.model_dump() for n in notifications},
             "message": dashboard_msg,
+            "delivered": delivered,
         }

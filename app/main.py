@@ -4,6 +4,7 @@ Run with: uvicorn app.main:app --reload
 """
 from __future__ import annotations
 
+import os
 from typing import Literal
 from uuid import uuid4
 
@@ -102,16 +103,36 @@ def create_demo_proposal(request: DemoRequest) -> dict:
     primary_verdict = orchestrator.gate_benefit(primary_benefit)
     primary_result = benefits.execute(primary_benefit, primary_verdict)
 
-    # Comms notification
+    # Comms notification — escalated proposals get live approve/decline
+    # links (WhatsApp/SMS/dashboard) resolved by the comms decision webhook.
+    notify_status = "awaiting_member_approval" if verdict["verdict"] == "escalate" else (
+        "payment_authorization_pending" if verdict["verdict"] != "blocked" else "blocked"
+    )
+    public_base = os.getenv("PUBLIC_BASE_URL", "").strip()
+    if not public_base and os.getenv("PRAVA_CALLBACK_URL"):
+        # Derive the site origin from the Prava callback URL: keep
+        # scheme://host and drop any callback path segment.
+        callback = os.getenv("PRAVA_CALLBACK_URL", "").strip().rstrip("/")
+        scheme_end = callback.find("://")
+        if scheme_end != -1:
+            host_start = scheme_end + 3
+            host_end = callback.find("/", host_start)
+            public_base = callback if host_end == -1 else callback[:host_end]
+        else:
+            public_base = callback
+
+    # Store the proposal first so a WhatsApp button tapped in the same
+    # instant resolves against the checkpoint instead of 404ing.
+    _proposals[proposal_id] = {"proposal": proposal, "verdict": verdict, "decision": None}
+
     notification = CommsAgent().notify(
         disruption,
-        {"status": "payment_authorization_pending" if verdict["verdict"] != "blocked" else "blocked",
-         "flight": proposal.candidate_flight},
+        {"status": notify_status, "flight": proposal.candidate_flight},
         primary_result,
         member,
+        proposal_id=proposal_id,
+        public_base_url=public_base,
     )
-
-    _proposals[proposal_id] = {"proposal": proposal, "verdict": verdict, "decision": None}
 
     return {
         "proposal_id": proposal_id,
@@ -129,19 +150,69 @@ def create_demo_proposal(request: DemoRequest) -> dict:
     }
 
 
-@app.post("/api/proposals/{proposal_id}/decision")
-def decide_proposal(proposal_id: str, request: MemberDecision) -> dict:
-    """Record the reusable member checkpoint before any escalated payment."""
+def _record_decision(proposal_id: str, decision: str) -> dict:
+    """Shared member checkpoint used by the dashboard and the WhatsApp webhook."""
     saved = _proposals.get(proposal_id)
     if not saved:
         raise HTTPException(status_code=404, detail="Proposal not found.")
     verdict = saved["verdict"]["verdict"]
     if verdict != "escalate":
         raise HTTPException(status_code=409, detail="Only escalated proposals require a member decision.")
-    saved["decision"] = request.decision
-    action = "member_approved_proposal" if request.decision == "approve" else "member_declined_proposal"
+    if saved.get("decision") is not None:
+        # First decision wins — a double-tap or stale link never re-runs the
+        # checkpoint or logs a second approval/decline event.
+        prior = saved["decision"]
+        return {
+            "proposal_id": proposal_id,
+            "decision": prior,
+            "already_recorded": True,
+            "next_step": "start_prava" if prior == "approve" else "human_handoff",
+        }
+    saved["decision"] = decision
+    action = "member_approved_proposal" if decision == "approve" else "member_declined_proposal"
     log_event("orchestrator", "human_checkpoint", action, {"proposal_id": proposal_id})
-    return {"proposal_id": proposal_id, "decision": request.decision, "next_step": "start_prava" if request.decision == "approve" else "human_handoff"}
+    return {
+        "proposal_id": proposal_id,
+        "decision": decision,
+        "next_step": "start_prava" if decision == "approve" else "human_handoff",
+    }
+
+
+def _decision_page(title: str, message: str, ok: bool) -> str:
+    """Small confirmation page shown after a WhatsApp/SMS one-tap decision."""
+    emoji = "✅" if ok else "⚠️"
+    return f"""<!doctype html><title>{title}</title>
+    <main style='font:16px system-ui;max-width:40rem;margin:5rem auto;padding:1.5rem'>
+    <h1>{emoji} {title}</h1>
+    <p>{message}</p>
+    <p style='color:#666'>You may close this tab and return to the Travel Disruption Concierge.</p>
+    </main>"""
+
+
+@app.post("/api/proposals/{proposal_id}/decision")
+def decide_proposal(proposal_id: str, request: MemberDecision) -> dict:
+    """Record the reusable member checkpoint before any escalated payment."""
+    return _record_decision(proposal_id, request.decision)
+
+
+@app.get("/api/comms/decision", response_class=HTMLResponse)
+def comms_decision(proposal_id: str, action: Literal["approve", "decline"] = "approve") -> str:
+    """Landing page for Twilio WhatsApp/SMS approve/decline buttons."""
+    try:
+        _record_decision(proposal_id, action)
+    except HTTPException as error:
+        return _decision_page("Decision not recorded", error.detail, ok=False)
+    if action == "approve":
+        return _decision_page(
+            "Rebooking approved",
+            "Your concierge is completing the rebooking through Prava.",
+            ok=True,
+        )
+    return _decision_page(
+        "Rebooking declined",
+        "No payment was made — a human agent will reach out.",
+        ok=True,
+    )
 
 
 @app.get("/api/audit/status")

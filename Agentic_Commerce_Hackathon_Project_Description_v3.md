@@ -121,9 +121,9 @@ Better proposals next time → fewer out-of-policy escalations → faster resolu
   ├──────────┤├──────────┤├──────────────┤├──────────────┤├──────────┤
   │Adaptive  ││Policy    ││Search+book   ││Trip-delay    ││WhatsApp  │
   │polling + ││scoring & ││flights/hotels││auto-filing,  ││SMS, Web  │
-  │diff      ││escalation││(Amadeus),    ││lounge, comp  ││push      │
+  │diff      ││escalation││(Duffel),     ││lounge, comp  ││push      │
   │engine    ││decision  ││pay via Prava ││vouchers      ││          │
-  │(Amadeus) ││          ││(Visa Intel.  ││(Card Benefits││(Twilio)  │
+  │(AeroAPI) ││          ││(Visa Intel.  ││(Card Benefits││(Twilio)  │
   │          ││          ││Commerce)     ││ API)         ││          │
   └──────────┘└──────────┘└──────────────┘└──────────────┘└──────────┘
         │           │           │                 │           │
@@ -142,7 +142,7 @@ Better proposals next time → fewer out-of-policy escalations → faster resolu
 ### 4.2 Agent Details
 
 #### Monitor Agent (Detection)
-- **API:** Amadeus Flight Status API, Flight Order Management API
+- **API:** FlightAware AeroAPI (real-time flight status), Duffel (flight offers & booking)
 - **Scheduler:** Celery/APScheduler with adaptive cadence
 - **Cache:** Redis for last-known state per PNR segment
 - **Logic:** Diff-based event emission + MCT-based connection buffer analysis
@@ -154,9 +154,9 @@ Better proposals next time → fewer out-of-policy escalations → faster resolu
 - **Output:** a proposal + policy verdict (in-policy / out-of-policy), passed to the Orchestrator — the Reasoning Agent never executes anything itself
 
 #### Rebooking Agent (Execution) — *with Prava (Visa Intelligent Commerce)*
-- **Tools:** Amadeus Flight Offers Search, Flight Create Orders, Hotel Search, Hotel Booking
+- **Tools:** Duffel flight offers search & orders; hotel search/booking via partner APIs
 - **Prava's role:** Prava is the **payments and trust layer** the Rebooking Agent uses to actually pay for the itinerary the Reasoning Agent selected. Once the Orchestrator authorizes a candidate, the Rebooking Agent opens a Prava session scoped to that exact merchant and amount. If it falls inside the member's standing mandate (set once, up front — e.g. "auto-approve rebookings under $75 fare delta on any airline"), Prava mints a one-time, merchant-locked Visa token instantly with no member interaction. If it falls outside the mandate, Prava prompts the member for a passkey (Touch ID/Face ID) approval — this *is* the one-tap approval step for payment actions, not a separate WhatsApp button. Either way, the Rebooking Agent never sees or stores a real card number; it only ever holds a token that is already dead after one use.
-- **Data scope:** flight/fare/hotel data + minimal traveler constraints (cabin class, loyalty tier) passed to Amadeus; toward Prava, only merchant + amount + mandate reference — no passport, and critically, **no raw card data ever touches our system at all**, which is a materially stronger privacy posture than the original design
+- **Data scope:** flight/fare/hotel data + minimal traveler constraints (cabin class, loyalty tier) passed to Duffel/FlightAware; toward Prava, only merchant + amount + mandate reference — no passport, and critically, **no raw card data ever touches our system at all**, which is a materially stronger privacy posture than the original design
 
 #### Benefits Agent (Card Value)
 - **API:** Card issuer's Benefits/Claims API
@@ -178,7 +178,7 @@ Better proposals next time → fewer out-of-policy escalations → faster resolu
 ### 4.3 Proven Tech Stack
 - **FastAPI + Celery:** Already used in our WhatsApp reminder project — proven webhook handling and background workers
 - **Twilio + FastAPI:** Already integrated — same notification stack, new domain
-- **Amadeus APIs:** Industry-standard, well-documented, archive of code examples available on GitHub
+- **Duffel & FlightAware APIs:** Modern self-serve REST APIs with free tiers and clear documentation
 - **LangChain / agent framework:** Orchestrator + crew pattern, strong tool-calling and human-in-the-loop support
 - **Redis + PostgreSQL:** Standard hot/cold data architecture, extended with per-agent attribution columns
 
@@ -290,23 +290,23 @@ To make the trust boundary concrete rather than a tagline:
 ### 6.1 Hackathon MVP (Week 1-2)
 - Monitor Agent: adaptive polling engine with Redis state cache
 - Reasoning Agent: 3 policy rules (price delta, fare class, MCT)
-- Rebooking Agent: Amadeus execution + Prava sandbox integration for one-time token issuance against a demo mandate
+- Rebooking Agent: Duffel execution + Prava sandbox integration for one-time token issuance against a demo mandate
 - Benefits Agent: trip-delay auto-filing against a mock Card Benefits API
 - Comms Agent: WhatsApp notification via Twilio, one-tap approve/decline
 - Orchestrator: policy gate + audit trail write for every proposal
-- Demo with 2-3 mock PNRs (synthetic data) using Amadeus test environment
+- Demo with 2-3 mock PNRs (synthetic data) using Duffel/FlightAware test environments
 
 ### 6.2 Why This Is Achievable
 - **Leverages existing skills:** FastAPI, Celery, Twilio, Redis — all already used in prior projects
-- **Clear API contracts:** Amadeus REST APIs are well-documented with Python/Node SDKs
+- **Clear API contracts:** Duffel & FlightAware REST APIs are well-documented with Python/Node SDKs
 - **Modular architecture:** each agent is independently testable and replaceable — Prava is a well-documented drop-in via MCP/CLI or SDK/API, so the payment step can be sandboxed and tested without touching the rest of the crew
 - **No ML training required:** rule-based policy engine means no data collection bottleneck; the Learning Flywheel is a post-MVP refinement, not a dependency
 
 ### 6.3 Implementation Steps
 1. **Day 1-2:** Orchestrator scaffold (FastAPI + Celery + Redis) with policy-gate interface
-2. **Day 3-4:** Monitor Agent — Amadeus Flight Status polling with diff engine
+2. **Day 3-4:** Monitor Agent — FlightAware AeroAPI status polling with diff engine
 3. **Day 5-6:** Reasoning Agent — YAML policy rules + scoring algorithm
-4. **Day 7-8:** Rebooking Agent — Amadeus execution tools + Prava integration (session creation, mandate check, token issuance, passkey-approval path)
+4. **Day 7-8:** Rebooking Agent — Duffel execution tools + Prava integration (session creation, mandate check, token issuance, passkey-approval path)
 5. **Day 9:** Benefits Agent — mock Card Benefits API + trip-delay auto-filing logic
 6. **Day 10-11:** Comms Agent — Twilio WhatsApp approve/decline + audit-backed web dashboard
 7. **Day 12:** Wire audit trail schema (per-agent attribution, hash-chaining) into every agent
@@ -355,7 +355,7 @@ To make the trust boundary concrete rather than a tagline:
 | TripIt / Google Trips | Static itinerary display | We ACT, not just display |
 | Concur / Egencia | Corporate booking + expense | We are autonomous, not just managed |
 | ChatGPT Travel Plugins | LLM-based recommendations | We have policy gates + auto-execution |
-| Airline apps | Single-carrier only | We are carrier-agnostic via Amadeus |
+| Airline apps | Single-carrier only | We are carrier-agnostic via Duffel |
 | Generic AI rebooking bots | Rebooking only | **Only we auto-file card benefits** — the issuer-side moat competitors structurally cannot replicate without the card data |
 
 ---
@@ -412,7 +412,7 @@ To make the trust boundary concrete rather than a tagline:
 
 Prava is **the payments and trust layer for AI agents**, built with Visa Intelligent Commerce: it turns a member's standing permission into a one-time, merchant-scoped Visa payment token, so an AI agent can complete a real checkout without ever touching a real card number. Integration is via API/SDK or MCP & CLI. In this system it is deliberately scoped **narrowly**, as a component *inside* the Rebooking Agent, not as a peer agent with its own authority:
 
-- **What it does:** once the Orchestrator authorizes a specific itinerary or hotel the Reasoning Agent has already scored and selected, the Rebooking Agent opens a Prava session for that exact merchant and amount. Prava checks the request against the member's standing mandate (set once at onboarding — e.g. "auto-approve rebookings under $75 fare delta, any airline, expires in 12 months") and either mints a one-time token instantly (in-mandate) or sends the member a passkey prompt for live approval (out-of-mandate). The Rebooking Agent uses that single-use token to complete the Amadeus booking exactly like any other card payment.
+- **What it does:** once the Orchestrator authorizes a specific itinerary or hotel the Reasoning Agent has already scored and selected, the Rebooking Agent opens a Prava session for that exact merchant and amount. Prava checks the request against the member's standing mandate (set once at onboarding — e.g. "auto-approve rebookings under $75 fare delta, any airline, expires in 12 months") and either mints a one-time token instantly (in-mandate) or sends the member a passkey prompt for live approval (out-of-mandate). The Rebooking Agent uses that single-use token to complete the Duffel booking exactly like any other card payment.
 - **What it never does:** decide *which* flight or hotel to pick — that stays with the Reasoning Agent's deterministic scoring — file a benefits claim, contact the member about anything other than the payment approval itself, or issue a token outside the mandate without a passkey tap. It is a payment execution primitive, not a decision-maker.
 - **What it receives:** merchant identifier, amount, and mandate reference for the specific transaction. It never receives passport numbers, PNR beyond what's needed to name the transaction, or unrelated member data — and critically, our system never sends it (or holds) a real card number, because it doesn't have one to send.
 - **What happens if it fails or a request is declined:** the Rebooking Agent retries once with backoff, then escalates to the member via Comms with a manual-checkout link — no stalled pipeline, no unexplained gap in the audit trail (the escalation event is logged too).
@@ -425,8 +425,8 @@ Prava is **the payments and trust layer for AI agents**, built with Visa Intelli
 - **Prava Docs:** https://docs.prava.space/ — start at Quickstart and "Choosing your integration"
 - **Prava Developer Dashboard:** https://dashboard.prava.space/ — SDK/API keys and sandbox
 - **Prava Interactive Playground:** https://playground.prava.space/ — live demo, no setup
-- **Amadeus for Developers:** https://developers.amadeus.com/ (self-service decommissioned July 2026; Enterprise API portal active)
-- **Amadeus GitHub Archive:** https://github.com/amadeus4dev (code examples, SDKs for Python, Node, Java)
+- **Duffel:** https://duffel.com/docs (flight search & booking, self-serve signup, free Starter tier)
+- **FlightAware AeroAPI:** https://www.flightaware.com/aeroapi/ (real-time flight status & tracking, self-serve signup, free tier)
 - **LangChain Documentation:** https://docs.langchain.com/oss/python/langchain/quickstart
 - **Twilio WhatsApp API:** https://www.twilio.com/whatsapp
 - **FastAPI:** https://fastapi.tiangolo.com/
